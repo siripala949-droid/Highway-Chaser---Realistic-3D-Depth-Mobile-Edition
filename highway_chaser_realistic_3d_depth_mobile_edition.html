@@ -1,0 +1,2730 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Highway Chaser: Ashok Leyland 3D Special Edition | Automaker Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Sinhala:wght@500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #05070d;
+            color: #f8fafc;
+            font-family: 'Inter', 'Noto Sans Sinhala', sans-serif;
+            touch-action: none;
+        }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .font-sinhala { font-family: 'Noto Sans Sinhala', sans-serif; }
+
+        .round-thumb-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 9999px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease, opacity 0.2s ease;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.65), inset 0 1px 1px rgba(255,255,255,0.35);
+        }
+        .round-thumb-btn:active:not(:disabled) {
+            transform: scale(0.88);
+        }
+        .round-thumb-btn:disabled {
+            opacity: 0.35;
+            filter: grayscale(0.8);
+            pointer-events: none;
+        }
+
+        @keyframes neonPulse {
+            0%, 100% { box-shadow: 0 0 14px rgba(244, 63, 94, 0.8), inset 0 0 8px rgba(255,255,255,0.4); }
+            50% { box-shadow: 0 0 24px rgba(56, 189, 248, 0.95), inset 0 0 12px rgba(255,255,255,0.6); }
+        }
+        .party-active-glow {
+            animation: neonPulse 1s infinite;
+        }
+
+        .bus-card-selected {
+            border-color: #ef4444 !important;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(69, 10, 10, 0.55)) !important;
+            box-shadow: 0 0 22px rgba(239, 68, 68, 0.35);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between h-screen w-screen bg-[#05070d] overflow-hidden">
+
+    <header class="w-full max-w-[520px] h-11 shrink-0 bg-[#0b101e] border-b border-white/10 px-2.5 flex items-center justify-between z-30">
+        <div class="flex items-center gap-2">
+            <div class="flex items-baseline gap-1">
+                <span id="hudSpeed" class="font-orbitron font-black text-base text-emerald-400">000</span>
+                <span class="text-[9px] font-bold text-slate-400">KM/H</span>
+            </div>
+            <div class="h-3.5 w-[1px] bg-white/10"></div>
+            <span id="hudRoadType" class="text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-500/15 border border-amber-400/30 text-amber-300">
+                2-WAY MAIN ROAD
+            </span>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1 text-[11px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20" title="Police Crashed via Wettu">
+                <i class="fa-solid fa-burst text-[10px]"></i>
+                <span id="hudWettuCount">0</span>
+            </div>
+            <div id="hudHitBars" class="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-900/90 border border-white/10" title="Rapid Hit Meter (5+ rapid hits = Game Over)">
+                <span class="w-1.5 h-2.5 rounded-sm bg-emerald-400 transition-colors"></span>
+                <span class="w-1.5 h-2.5 rounded-sm bg-emerald-400 transition-colors"></span>
+                <span class="w-1.5 h-2.5 rounded-sm bg-emerald-400 transition-colors"></span>
+                <span class="w-1.5 h-2.5 rounded-sm bg-emerald-400 transition-colors"></span>
+                <span class="w-1.5 h-2.5 rounded-sm bg-emerald-400 transition-colors"></span>
+            </div>
+            <div id="hudStars" class="flex items-center gap-0.5 text-[11px] text-slate-700">
+                <i class="fa-solid fa-star"></i>
+                <i class="fa-solid fa-star"></i>
+                <i class="fa-solid fa-star"></i>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+            <button id="btnMute" onclick="toggleAudioMute()" class="w-7 h-7 rounded-lg bg-slate-800/90 border border-white/10 flex items-center justify-center text-emerald-400">
+                <i id="iconMute" class="fa-solid fa-volume-high text-xs"></i>
+            </button>
+            <button onclick="openGarageModal()" class="px-2 h-7 rounded-lg bg-red-600/20 border border-red-500/40 text-[10px] font-extrabold text-red-300 flex items-center gap-1">
+                <i class="fa-solid fa-bus text-[10px]"></i>
+                <span>GARAGE</span>
+            </button>
+        </div>
+    </header>
+
+    <main id="viewportContainer" class="relative flex-1 w-full max-w-[520px] bg-[#090d16] overflow-hidden flex items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.95)] border-x border-white/10">
+        <canvas id="gameCanvas" class="block w-full h-full cursor-grab active:cursor-grabbing"></canvas>
+
+        <div id="minimalBanner" class="pointer-events-none absolute top-2.5 left-1/2 -translate-x-1/2 px-3.5 py-1 rounded-full bg-black/85 backdrop-blur-md border border-amber-400/40 text-[11px] font-bold text-amber-200 whitespace-nowrap opacity-0 transition-opacity duration-300 z-20 shadow-lg">
+            Ready
+        </div>
+
+        <div class="absolute left-2.5 bottom-6 flex flex-col gap-2.5 z-20">
+            <button onclick="triggerMusicalHorn()" class="round-thumb-btn bg-gradient-to-br from-amber-400 to-orange-600 text-slate-950 border border-amber-200">
+                <i class="fa-solid fa-bullhorn text-sm"></i>
+                <span class="text-[7px] font-black tracking-tighter leading-none mt-0.5">HORN</span>
+            </button>
+
+            <button id="btnPassLight" onclick="triggerPassLight()" class="round-thumb-btn bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 text-slate-950 border border-white">
+                <i class="fa-solid fa-bolt-lightning text-sm"></i>
+                <span id="lblPassMode" class="text-[7px] font-black tracking-tighter leading-none mt-0.5">PASS</span>
+            </button>
+
+            <button id="btnPartyLight" onclick="togglePartyLights()" class="round-thumb-btn bg-gradient-to-br from-fuchsia-600 to-indigo-700 text-white border border-pink-300/60 party-active-glow">
+                <i class="fa-solid fa-compact-disc fa-spin text-sm"></i>
+                <span class="text-[7px] font-black tracking-tighter leading-none mt-0.5">PARTY</span>
+            </button>
+        </div>
+
+        <div class="absolute right-2.5 bottom-6 flex flex-col gap-2.5 z-20">
+            <button id="btnNitro" onclick="triggerNitroBoost()" class="round-thumb-btn bg-gradient-to-br from-cyan-400 to-blue-700 text-white border border-cyan-200 relative">
+                <i class="fa-solid fa-fire-flame-curved text-sm"></i>
+                <span class="text-[7px] font-black tracking-tighter leading-none mt-0.5">NITRO</span>
+                <span id="badgeNitro" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-600 border border-white text-[9px] font-black flex items-center justify-center">3</span>
+            </button>
+
+            <button id="btnSpoiler" onclick="triggerSpoilerDrop()" class="round-thumb-btn bg-gradient-to-br from-rose-500 to-red-800 text-white border border-rose-300">
+                <i class="fa-solid fa-car-burst text-sm"></i>
+                <span id="lblSpoilerState" class="text-[7px] font-black tracking-tighter leading-none mt-0.5">TRAP</span>
+            </button>
+
+            <button id="btnStrobe" onclick="triggerStrobeLaser()" disabled class="round-thumb-btn bg-gradient-to-br from-purple-500 to-violet-900 text-white border border-purple-300">
+                <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
+                <span id="lblStrobeState" class="text-[7px] font-black tracking-tighter leading-none mt-0.5">LASER</span>
+            </button>
+        </div>
+
+        <div id="loadingOverlay" class="absolute inset-0 bg-[#05070d] z-50 flex flex-col items-center justify-center p-6 transition-opacity duration-700">
+            <div class="relative w-36 h-36 rounded-full flex items-center justify-center mb-4 shadow-[0_0_60px_rgba(220,38,38,0.5)] border-2 border-red-600 bg-gradient-to-b from-black via-zinc-950 to-red-950/40">
+                <svg viewBox="0 0 220 220" class="w-32 h-32">
+                    <defs>
+                        <linearGradient id="lionGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ff1e1e"/>
+                            <stop offset="100%" stop-color="#880000"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M110 14 L126 32 L148 22 L152 44 L178 40 L168 65 L192 72 L176 94 L162 158 L144 192 L128 168 L110 202 L92 168 L76 192 L58 158 L44 94 L28 72 L52 65 L42 40 L68 44 L72 22 L94 32 Z" fill="url(#lionGrad)"/>
+                    <polygon points="82,62 98,67 85,71" fill="#ffffff"/>
+                    <polygon points="138,62 122,67 135,71" fill="#ffffff"/>
+                    <path d="M46 118 L66 84 L154 84 L174 118 L182 148 L38 148 Z" fill="#dc2626" stroke="#111" stroke-width="2"/>
+                    <polygon points="70,88 150,88 162,110 58,110" fill="#090d16"/>
+                    <polygon points="46,120 74,124 68,134 42,130" fill="#f8fafc"/>
+                    <polygon points="174,120 146,124 152,134 178,130" fill="#f8fafc"/>
+                    <text x="110" y="168" text-anchor="middle" fill="#ffffff" font-family="Orbitron, sans-serif" font-weight="900" font-style="italic" font-size="22">Automaker</text>
+                </svg>
+            </div>
+            <div class="font-orbitron font-black text-sm tracking-[0.25em] text-red-500 uppercase mb-1">Powered by Automaker</div>
+            <div class="text-xs text-slate-400 mb-5">Sri Lankan Ashok Leyland 3D Rear-Chase Engine</div>
+            <div class="w-48 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/10">
+                <div id="loadingBarFill" class="h-full bg-gradient-to-r from-red-600 via-amber-500 to-rose-500 w-0 transition-all duration-300"></div>
+            </div>
+        </div>
+
+        <div id="garageOverlay" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-xl z-40 flex flex-col justify-between p-3.5 overflow-y-auto">
+            <div>
+                <div class="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
+                    <div>
+                        <h1 class="font-orbitron font-black text-sm sm:text-base text-white tracking-wide">ASHOK LEYLAND 3D GARAGE</h1>
+                        <p class="text-[11px] text-amber-300 font-sinhala">ලංකාවේ සුපිරිම Modify බස් එක තෝරගෙන ලංගමයා පන්නමු!</p>
+                    </div>
+                    <span class="text-[9px] font-extrabold px-2 py-1 rounded bg-red-500/20 border border-red-500/40 text-red-300">
+                        3D REAR VIEW
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 gap-2 mb-2.5">
+                    <div onclick="selectBus(0)" id="busCard0" class="bus-card-selected cursor-pointer p-2.5 rounded-xl bg-slate-900/90 border-2 border-red-500 flex items-center justify-between transition">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-11 h-11 rounded-lg bg-gradient-to-b from-red-600 via-red-900 to-black flex flex-col items-center justify-center border border-amber-400/60 shadow-md">
+                                <span class="text-[8px] font-black text-amber-300 bg-black/80 px-1 rounded">NE-2387</span>
+                                <i class="fa-solid fa-bus text-red-400 text-sm mt-0.5"></i>
+                            </div>
+                            <div>
+                                <div class="font-extrabold text-xs sm:text-sm text-red-400 flex items-center gap-1.5">
+                                    <span>BAHUBALI (බාහුබලි)</span>
+                                    <span class="text-[9px] px-1.5 py-0.5 bg-red-500/20 rounded text-amber-300">Bat-Wing Spoiler</span>
+                                </div>
+                                <div class="text-[10px] text-slate-300">"New Legend of Bus Kingdom" • Korean Window Quote • Lambo Tail Grille</div>
+                            </div>
+                        </div>
+                        <div class="text-right font-orbitron font-bold text-[10px] text-amber-400">250 KM/H</div>
+                    </div>
+
+                    <div onclick="selectBus(1)" id="busCard1" class="cursor-pointer p-2.5 rounded-xl bg-slate-900/80 border-2 border-white/10 flex items-center justify-between transition">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-11 h-11 rounded-lg bg-gradient-to-b from-fuchsia-500 via-pink-700 to-purple-950 flex flex-col items-center justify-center border border-pink-300/60 shadow-md">
+                                <span class="text-[8px] font-black text-yellow-300 bg-black/80 px-1 rounded">NB-4410</span>
+                                <i class="fa-solid fa-bus text-pink-200 text-sm mt-0.5"></i>
+                            </div>
+                            <div>
+                                <div class="font-extrabold text-xs sm:text-sm text-pink-400 flex items-center gap-1.5">
+                                    <span>DAM REJINA (දම් රැජින)</span>
+                                    <span class="text-[9px] px-1.5 py-0.5 bg-pink-500/20 rounded text-pink-200">S & S Group VIP</span>
+                                </div>
+                                <div class="text-[10px] text-slate-300">"Purple Queen Voyage" • Quad Exhaust & Matrix LEDs</div>
+                            </div>
+                        </div>
+                        <div class="text-right font-orbitron font-bold text-[10px] text-pink-300">NITRO+</div>
+                    </div>
+
+                    <div onclick="selectBus(2)" id="busCard2" class="cursor-pointer p-2.5 rounded-xl bg-slate-900/80 border-2 border-white/10 flex items-center justify-between transition">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-11 h-11 rounded-lg bg-gradient-to-b from-rose-600 via-cyan-700 to-slate-900 flex flex-col items-center justify-center border border-cyan-300/60 shadow-md">
+                                <span class="text-[8px] font-black text-slate-950 bg-yellow-300 px-1 rounded">NA-6960</span>
+                                <i class="fa-solid fa-bus text-cyan-200 text-sm mt-0.5"></i>
+                            </div>
+                            <div>
+                                <div class="font-extrabold text-xs sm:text-sm text-cyan-400 flex items-center gap-1.5">
+                                    <span>INDUNIL (ඉඳුනිල් සුපර්)</span>
+                                    <span class="text-[9px] px-1.5 py-0.5 bg-cyan-500/20 rounded text-cyan-200">Geisha Airbrush</span>
+                                </div>
+                                <div class="text-[10px] text-slate-300">Devil-Horn Spoiler • Geisha Mural • 6x Jet Tail Lamps</div>
+                            </div>
+                        </div>
+                        <div class="text-right font-orbitron font-bold text-[10px] text-cyan-300">DRIFT+</div>
+                    </div>
+
+                    <div onclick="selectBus(3)" id="busCard3" class="cursor-pointer p-2.5 rounded-xl bg-slate-900/80 border-2 border-white/10 flex items-center justify-between transition">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-11 h-11 rounded-lg bg-gradient-to-b from-rose-600 via-red-800 to-slate-900 flex flex-col items-center justify-center border border-slate-300/60 shadow-md">
+                                <span class="text-[8px] font-black text-yellow-300 bg-black/80 px-1 rounded">NE-9972</span>
+                                <i class="fa-solid fa-bus text-rose-300 text-sm mt-0.5"></i>
+                            </div>
+                            <div>
+                                <div class="font-extrabold text-xs sm:text-sm text-rose-400 flex items-center gap-1.5">
+                                    <span>NAWARATHNA (නවරත්න මායා)</span>
+                                    <span class="text-[9px] px-1.5 py-0.5 bg-rose-500/20 rounded text-rose-200">Chrome Ladder</span>
+                                </div>
+                                <div class="text-[10px] text-slate-300">"Red Heart මායා" • 3x2 Square LEDs • SL Lion Flag</div>
+                            </div>
+                        </div>
+                        <div class="text-right font-orbitron font-bold text-[10px] text-rose-300">AGILE+</div>
+                    </div>
+
+                    <div onclick="selectBus(4)" id="busCard4" class="cursor-pointer p-2.5 rounded-xl bg-slate-900/80 border-2 border-white/10 flex items-center justify-between transition">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-11 h-11 rounded-lg bg-gradient-to-b from-orange-500 via-red-700 to-amber-950 flex flex-col items-center justify-center border border-amber-300/60 shadow-md">
+                                <span class="text-[8px] font-black text-slate-950 bg-yellow-300 px-1 rounded">NB-9094</span>
+                                <i class="fa-solid fa-bus text-amber-200 text-sm mt-0.5"></i>
+                            </div>
+                            <div>
+                                <div class="font-extrabold text-xs sm:text-sm text-amber-400 flex items-center gap-1.5">
+                                    <span>KUVENI (කුවේණි EDITION)</span>
+                                    <span class="text-[9px] px-1.5 py-0.5 bg-amber-500/20 rounded text-amber-200">Perahera Art</span>
+                                </div>
+                                <div class="text-[10px] text-slate-300">Liyanaarachchi Transport • Perahera Tusker Silhouette</div>
+                            </div>
+                        </div>
+                        <div class="text-right font-orbitron font-bold text-[10px] text-amber-300">POWER+</div>
+                    </div>
+
+                    <div onclick="selectBus(5)" id="busCard5" class="cursor-pointer p-2.5 rounded-xl bg-slate-900/80 border-2 border-white/10 flex items-center justify-between transition">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-11 h-11 rounded-lg bg-gradient-to-b from-yellow-400 via-amber-600 to-stone-900 flex flex-col items-center justify-center border border-yellow-300/60 shadow-md">
+                                <span class="text-[8px] font-black text-slate-950 bg-yellow-300 px-1 rounded">NB-7814</span>
+                                <i class="fa-solid fa-bus text-yellow-200 text-sm mt-0.5"></i>
+                            </div>
+                            <div>
+                                <div class="font-extrabold text-xs sm:text-sm text-yellow-400 flex items-center gap-1.5">
+                                    <span>PAHASARA (පැහැසර අකුරැස්ස)</span>
+                                    <span class="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 rounded text-yellow-200">SL Flag & Portrait</span>
+                                </div>
+                                <div class="text-[10px] text-slate-300">Golden Yellow Livery • Portrait Airbrush • Chrome Ladder</div>
+                            </div>
+                        </div>
+                        <div class="text-right font-orbitron font-bold text-[10px] text-yellow-300">TORQUE+</div>
+                    </div>
+                </div>
+
+                <div class="bg-black/60 border border-white/10 rounded-xl p-2.5 text-[10px] text-slate-300 space-y-1">
+                    <div class="font-bold text-amber-300">🔥 5-Hit Rapid Damage System:</div>
+                    <div>• වාහනවල වැදුනොත් වේගය අඩුවෙනවා. හැබැයි <strong>ලඟ ලඟ 5 වතාවකට වඩා</strong> එකදිගට වැදුනොත් එන්ජිම ඕවර්ලෝඩ් වෙලා Game Over වෙනවා!</div>
+                    <div>• තවදුරටත් ආරක්ෂිතව දිව්වොත් Hit Meter එක ඉබේම රිකවර් වෙනවා.</div>
+                </div>
+            </div>
+
+            <button onclick="startChaseGame()" class="mt-2 w-full py-3 rounded-xl bg-gradient-to-r from-red-600 via-amber-500 to-rose-600 text-slate-950 font-orbitron font-black text-sm tracking-wider shadow-[0_0_25px_rgba(239,68,68,0.6)] cursor-pointer">
+                START 3D HIGHWAY CHASE
+            </button>
+        </div>
+
+        <div id="gameOverOverlay" class="hidden absolute inset-0 bg-black/90 backdrop-blur-xl z-40 flex flex-col items-center justify-center p-5 text-center">
+            <div class="w-16 h-16 rounded-full bg-rose-600/20 border-2 border-rose-500 flex items-center justify-center mb-3 shadow-[0_0_35px_rgba(244,63,94,0.6)]">
+                <i class="fa-solid fa-car-burst text-2xl text-rose-400"></i>
+            </div>
+            <h2 class="font-orbitron font-black text-lg text-white tracking-wider mb-1">ENGINE OVERLOAD & BUSTED!</h2>
+            <p class="font-sinhala text-xs text-rose-300 mb-4 max-w-xs">
+                ලඟ ලඟ 5 වතාවකට වඩා වාහනවල වැදුණු නිසා බස් එකේ එන්ජිම නතර වුණා! පොලිසියෙන් බස් එක වට කළා!
+            </p>
+            <div class="w-full max-w-xs bg-slate-900/90 border border-white/10 rounded-xl p-3 mb-4 grid grid-cols-2 gap-2 text-left">
+                <div class="bg-black/50 p-2 rounded-lg border border-white/5">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">Police Wrecked</div>
+                    <div id="goWettuCount" class="font-orbitron font-black text-base text-rose-400">0</div>
+                </div>
+                <div class="bg-black/50 p-2 rounded-lg border border-white/5">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold">Distance Chased</div>
+                    <div id="goDistance" class="font-orbitron font-black text-base text-emerald-400">0.0 KM</div>
+                </div>
+            </div>
+            <div class="flex gap-2.5 w-full max-w-xs">
+                <button onclick="openGarageModalFromGameOver()" class="flex-1 py-2.5 rounded-xl bg-slate-800 border border-white/15 text-xs font-extrabold text-slate-200 cursor-pointer">
+                    CHANGE BUS
+                </button>
+                <button onclick="startChaseGame()" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-500 text-slate-950 font-orbitron font-black text-xs cursor-pointer shadow-[0_0_20px_rgba(239,68,68,0.5)]">
+                    PLAY AGAIN
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="w-full max-w-[520px] h-9 shrink-0 bg-[#0b101e] border-t border-white/10 px-3 flex items-center justify-between text-[10px] z-30">
+        <span class="text-slate-300 flex items-center gap-1.5 font-semibold">
+            <i class="fa-solid fa-arrows-left-right text-amber-400"></i>
+            <span>Touch & Drag Left/Right to Weave (වෙට්ටු දාන්න)</span>
+        </span>
+        <div class="flex items-center gap-2">
+            <span id="lblNextZone" class="text-[9px] text-emerald-300 font-bold">Next: අතුරු පාර</span>
+            <div class="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden border border-white/10">
+                <div id="roadZoneBar" class="h-full bg-gradient-to-r from-amber-400 to-emerald-400 w-1/3 transition-all duration-200"></div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let cw = 460;
+        let ch = 720;
+
+        function resizeCanvas() {
+            const container = document.getElementById('viewportContainer');
+            const rect = container.getBoundingClientRect();
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            cw = rect.width;
+            ch = rect.height;
+            canvas.width = cw * dpr;
+            canvas.height = ch * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        class HighwaySoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+                this.engineOsc = null;
+                this.engineSub = null;
+                this.engineGain = null;
+                this.sirenOsc = null;
+                this.sirenGain = null;
+                this.sirenPhase = 0;
+            }
+
+            init() {
+                if (this.ctx) {
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    return;
+                }
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                this.ctx = new AudioCtx();
+
+                this.engineOsc = this.ctx.createOscillator();
+                this.engineSub = this.ctx.createOscillator();
+                this.engineGain = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 280;
+
+                this.engineOsc.type = 'sawtooth';
+                this.engineSub.type = 'square';
+                this.engineOsc.frequency.value = 56;
+                this.engineSub.frequency.value = 28;
+                this.engineGain.gain.value = 0.075;
+
+                this.engineOsc.connect(filter);
+                this.engineSub.connect(filter);
+                filter.connect(this.engineGain);
+                this.engineGain.connect(this.ctx.destination);
+                this.engineOsc.start();
+                this.engineSub.start();
+
+                this.sirenOsc = this.ctx.createOscillator();
+                this.sirenGain = this.ctx.createGain();
+                this.sirenOsc.type = 'triangle';
+                this.sirenOsc.frequency.value = 660;
+                this.sirenGain.gain.value = 0.0;
+                this.sirenOsc.connect(this.sirenGain);
+                this.sirenGain.connect(this.ctx.destination);
+                this.sirenOsc.start();
+            }
+
+            updateLoops(speedNorm, nitroActive, activePoliceCount, dt) {
+                if (!this.ctx || this.muted) return;
+                const now = this.ctx.currentTime;
+                const rpmFreq = 46 + speedNorm * 78 + (nitroActive ? 35 : 0);
+                this.engineOsc.frequency.setTargetAtTime(rpmFreq, now, 0.05);
+                this.engineSub.frequency.setTargetAtTime(rpmFreq * 0.5, now, 0.05);
+                this.engineGain.gain.setTargetAtTime(nitroActive ? 0.14 : 0.075, now, 0.06);
+
+                if (activePoliceCount > 0) {
+                    this.sirenPhase += dt * 4.8;
+                    const sFreq = 700 + Math.sin(this.sirenPhase) * 250;
+                    this.sirenOsc.frequency.setTargetAtTime(sFreq, now, 0.03);
+                    this.sirenGain.gain.setTargetAtTime(0.04, now, 0.1);
+                } else {
+                    this.sirenGain.gain.setTargetAtTime(0.0, now, 0.1);
+                }
+            }
+
+            playMusicalBusHorn() {
+                if (!this.ctx || this.muted) return;
+                const melody = [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5];
+                melody.forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.value = freq;
+                    const t = this.ctx.currentTime + i * 0.07;
+                    gain.gain.setValueAtTime(0.09, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.065);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.07);
+                });
+            }
+
+            playAchchiScoldVoice() {
+                if (!this.ctx || this.muted) return;
+                [640, 820, 560, 890, 690].forEach((f, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.value = f;
+                    const t = this.ctx.currentTime + i * 0.06;
+                    gain.gain.setValueAtTime(0.045, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.055);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.06);
+                });
+            }
+
+            playKidsCheerVoice() {
+                if (!this.ctx || this.muted) return;
+                [587.33, 880, 1174.66].forEach((f, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.value = f;
+                    const t = this.ctx.currentTime + i * 0.08;
+                    gain.gain.setValueAtTime(0.06, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.13);
+                });
+            }
+
+            playHeavyCrash() {
+                if (!this.ctx || this.muted) return;
+                const len = this.ctx.sampleRate * 0.42;
+                const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+                const data = buf.getChannelData(0);
+                for (let i = 0; i < len; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.12));
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buf;
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 560;
+                const gain = this.ctx.createGain();
+                gain.gain.value = 0.28;
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            }
+        }
+
+        const audio = new HighwaySoundEngine();
+
+        function toggleAudioMute() {
+            audio.init();
+            audio.muted = !audio.muted;
+            if (audio.muted && audio.ctx) {
+                audio.engineGain.gain.value = 0;
+                audio.sirenGain.gain.value = 0;
+            }
+            document.getElementById('iconMute').className = audio.muted
+                ? 'fa-solid fa-volume-xmark text-xs text-rose-400'
+                : 'fa-solid fa-volume-high text-xs text-emerald-400';
+        }
+
+        const BUS_PROFILES = [
+            {
+                id: 0,
+                name: 'BAHUBALI',
+                sinhalaScript: 'Bahubali',
+                sinhalaTitle: 'NEW LEGEND OF BUS KINGDOM',
+                plate: 'NE-2387',
+                topBanner: 'SPECIAL HIRING',
+                koreanQuote: '잠깐 얘기 좀 봐요 • 이건 당신을 위한 거예요...',
+                subQuote: 'SPECIAL HIRING - 074 2786334 / 071 5720641',
+                mudflapTop: 'NEW LEGEND',
+                mudflapBot: 'OF BUS KINGDOM',
+                primaryColor: '#dc2626',
+                secondaryColor: '#450a0a',
+                sideColor: '#09090b',
+                accentColor: '#facc15',
+                spoilerType: 'batwing_beacon',
+                tailStyle: 'lambo',
+                lowerBayStyle: 'gloss_black',
+                hasLadder: false,
+                hasSLFlag: false,
+                hasQuadExhaust: false,
+                baseMaxSpeed: 250,
+                handling: 11.8
+            },
+            {
+                id: 1,
+                name: 'DAM REJINA',
+                sinhalaScript: 'දම් රැජින',
+                sinhalaTitle: 'මගී ප්‍රවාහන සේවයේ හදගැස්ම',
+                plate: 'NB-4410',
+                topBanner: 'S & S Group',
+                koreanQuote: 'WEDDING HIRE | OFFICE HIRE | TOURS & TRAVELS',
+                subQuote: 'ALANKARA AUTOMOTIVE • HOT LINE 0758699999',
+                mudflapTop: 'Purple Queen Voyage',
+                mudflapBot: "Nobody's Perfect, Xcept The Queen... VIP",
+                primaryColor: '#db2777',
+                secondaryColor: '#4a044e',
+                sideColor: '#701a75',
+                accentColor: '#facc15',
+                spoilerType: 'batwing_spots',
+                tailStyle: 'led_matrix_bar',
+                lowerBayStyle: 'dhamrejin_glass',
+                hasLadder: true,
+                hasSLFlag: false,
+                hasQuadExhaust: true,
+                baseMaxSpeed: 248,
+                handling: 12.4
+            },
+            {
+                id: 2,
+                name: 'INDUNIL',
+                sinhalaScript: 'INDUNIL',
+                sinhalaTitle: 'ජය ශ්‍රී මහා බෝ සමිඳු පිහිටයි!',
+                plate: 'NA-6960',
+                topBanner: 'Special',
+                koreanQuote: 'ජය ශ්‍රී මහා බෝ සමිඳු පිහිටයි!',
+                subQuote: 'HOT LINE - 074 041505 • JAPANESE EDITION',
+                mudflapTop: 'INDUNIL SUPER EXPRESS',
+                mudflapBot: 'SPECIAL HIRING • SRI LANKA',
+                primaryColor: '#b91c1c',
+                secondaryColor: '#0e7490',
+                sideColor: '#0284c7',
+                accentColor: '#38bdf8',
+                spoilerType: 'devil_horn',
+                tailStyle: 'square3x2',
+                lowerBayStyle: 'geisha_mural',
+                hasLadder: true,
+                hasSLFlag: false,
+                hasQuadExhaust: false,
+                baseMaxSpeed: 246,
+                handling: 12.6
+            },
+            {
+                id: 3,
+                name: 'NAWARATHNA',
+                sinhalaScript: 'Nawarathna',
+                sinhalaTitle: 'පබළු Red Edition මායා',
+                plate: 'NE-9972',
+                topBanner: 'SPECIAL',
+                koreanQuote: 'පබළු Red Edition මායා',
+                subQuote: 'මඩුවා කළුතර මතුගම • 077 74 36 855',
+                mudflapTop: 'Red Heart',
+                mudflapBot: 'මායා',
+                primaryColor: '#be123c',
+                secondaryColor: '#3b0764',
+                sideColor: '#4c0519',
+                accentColor: '#fde047',
+                spoilerType: 'classic',
+                tailStyle: 'square3x2',
+                lowerBayStyle: 'lion_flag_squad',
+                hasLadder: true,
+                hasSLFlag: true,
+                hasQuadExhaust: false,
+                baseMaxSpeed: 242,
+                handling: 12.5
+            },
+            {
+                id: 4,
+                name: 'KUVENI',
+                sinhalaScript: 'කුවේණි EDITION',
+                sinhalaTitle: 'LIYANAARACHCHI TRANSPORT PVT LTD',
+                plate: 'NB-9094',
+                topBanner: 'SPIDERMAN',
+                koreanQuote: 'LIYANAARACHCHI TRANSPORT • NAWALA | KULIYAPITIYA',
+                subQuote: 'Special Hiring : 071 1793886 / 077 1817760',
+                mudflapTop: 'KUVENI EDITION',
+                mudflapBot: 'HEARTBEAT OF WAYAMBA',
+                primaryColor: '#ea580c',
+                secondaryColor: '#7c2d12',
+                sideColor: '#9a3412',
+                accentColor: '#facc15',
+                spoilerType: 'boxwing',
+                tailStyle: 'square3x2',
+                lowerBayStyle: 'perahera_elephants',
+                hasLadder: true,
+                hasSLFlag: false,
+                hasQuadExhaust: false,
+                baseMaxSpeed: 244,
+                handling: 12.2
+            },
+            {
+                id: 5,
+                name: 'PAHASARA',
+                sinhalaScript: 'පැහැසර Akurassa',
+                sinhalaTitle: 'SOUTHERN EXPRESS SPECIAL',
+                plate: 'NB-7814',
+                topBanner: 'PAHASARA',
+                koreanQuote: 'තුන් සරණේ පිහිටයි • අකුරැස්ස - කොළඹ',
+                subQuote: 'PAHASARA TRANSPORT • AKURASSA VIP',
+                mudflapTop: 'පැහැසර Akurassa',
+                mudflapBot: 'KING OF SOUTHERN ROADS',
+                primaryColor: '#eab308',
+                secondaryColor: '#713f12',
+                sideColor: '#854d0e',
+                accentColor: '#ef4444',
+                spoilerType: 'boxwing',
+                tailStyle: 'square3x2',
+                lowerBayStyle: 'portrait_mural',
+                hasLadder: true,
+                hasSLFlag: true,
+                hasQuadExhaust: false,
+                baseMaxSpeed: 245,
+                handling: 12.3
+            }
+        ];
+
+        const REAL_BG_IMAGES = {
+            mountains: new Image(),
+            clouds: new Image()
+        };
+        REAL_BG_IMAGES.mountains.crossOrigin = 'anonymous';
+        REAL_BG_IMAGES.mountains.src = 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80';
+        REAL_BG_IMAGES.clouds.crossOrigin = 'anonymous';
+        REAL_BG_IMAGES.clouds.src = 'https://images.unsplash.com/photo-1517483000871-1dbf64a6e1c6?auto=format&fit=crop&w=1200&q=80';
+
+        const PASS_LIGHT_MODES = [
+            { name: 'VIP GOLD', color1: 'rgba(253, 224, 71, 0.85)', color2: 'rgba(251, 146, 60, 0.28)' },
+            { name: 'XENON ICE', color1: 'rgba(56, 189, 248, 0.9)', color2: 'rgba(129, 140, 248, 0.32)' },
+            { name: 'LASER RED', color1: 'rgba(244, 63, 94, 0.85)', color2: 'rgba(168, 85, 247, 0.32)' }
+        ];
+
+        const ROAD_ZONES = [
+            {
+                id: 0,
+                title: '2-WAY MAIN ROAD',
+                nextTitle: 'අතුරු පාර (By-Road)',
+                widthFactor: 1.0,
+                lanes: 2,
+                twoWay: true,
+                hasTreeCanopy: false
+            },
+            {
+                id: 1,
+                title: 'අතුරු පාර (NARROW)',
+                nextTitle: 'EXPRESSWAY',
+                widthFactor: 0.64,
+                lanes: 2,
+                twoWay: true,
+                hasTreeCanopy: true
+            },
+            {
+                id: 2,
+                title: '4-LANE HIGHWAY',
+                nextTitle: '2-Way Main Road',
+                widthFactor: 1.24,
+                lanes: 4,
+                twoWay: false,
+                hasTreeCanopy: false
+            }
+        ];
+
+        let selectedBusIndex = 0;
+        let gameRunning = false;
+        let bannerTimeout = null;
+
+        function showMinimalBanner(text, duration = 2600) {
+            const el = document.getElementById('minimalBanner');
+            el.textContent = text;
+            el.style.opacity = '1';
+            if (bannerTimeout) clearTimeout(bannerTimeout);
+            bannerTimeout = setTimeout(() => {
+                el.style.opacity = '0';
+            }, duration);
+        }
+
+        function selectBus(idx) {
+            selectedBusIndex = idx;
+            [0, 1, 2, 3, 4, 5].forEach(i => {
+                const card = document.getElementById('busCard' + i);
+                if (!card) return;
+                if (i === idx) card.classList.add('bus-card-selected');
+                else card.classList.remove('bus-card-selected');
+            });
+        }
+
+        function openGarageModal() {
+            document.getElementById('gameOverOverlay').classList.add('hidden');
+            document.getElementById('garageOverlay').classList.remove('hidden');
+        }
+
+        function openGarageModalFromGameOver() {
+            document.getElementById('gameOverOverlay').classList.add('hidden');
+            document.getElementById('garageOverlay').classList.remove('hidden');
+        }
+
+        function updateHitMeterHUD() {
+            const container = document.getElementById('hudHitBars');
+            if (!container) return;
+            const bars = container.children;
+            const hits = state.player.consecutiveHits;
+            for (let i = 0; i < 5; i++) {
+                if (i < hits) {
+                    bars[i].className = hits >= 4
+                        ? 'w-1.5 h-2.5 rounded-sm bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.9)] transition-colors'
+                        : 'w-1.5 h-2.5 rounded-sm bg-amber-400 transition-colors';
+                } else {
+                    bars[i].className = 'w-1.5 h-2.5 rounded-sm bg-emerald-400/80 transition-colors';
+                }
+            }
+        }
+
+        function triggerGameOver() {
+            gameRunning = false;
+            audio.playHeavyCrash();
+            if (audio.ctx && !audio.muted) {
+                audio.engineGain.gain.setTargetAtTime(0, audio.ctx.currentTime, 0.1);
+                audio.sirenGain.gain.setTargetAtTime(0, audio.ctx.currentTime, 0.1);
+            }
+            document.getElementById('goWettuCount').textContent = state.wettuCrashCount;
+            document.getElementById('goDistance').textContent = (state.distance / 1000).toFixed(2) + ' KM';
+            document.getElementById('gameOverOverlay').classList.remove('hidden');
+        }
+
+        const state = {
+            survivalTime: 0,
+            distance: 0,
+            zoneIndex: 0,
+            zoneProgress: 0,
+            zoneDuration: 28,
+            smoothWidthFactor: 1.0,
+            roadCurve: 0,
+            targetRoadCurve: 0,
+            curveTimer: 0,
+            wettuCrashCount: 0,
+            cameraShake: 0,
+
+            player: {
+                x: -0.35,
+                targetX: -0.35,
+                speed: 145,
+                maxSpeed: 245,
+                tilt: 0,
+                partyLightsOn: true,
+                passLightTimer: 0,
+                passLightModeIdx: 0,
+                nitroTimer: 0,
+                nitroCount: 3,
+                spoilerAttached: true,
+                strobeTimer: 0,
+                consecutiveHits: 0,
+                hitCooldownTimer: 0,
+                hitInvulnTimer: 0
+            },
+
+            rivalCtb: {
+                x: 0.25,
+                z: 42,
+                tauntTimer: 3.5
+            },
+
+            chopper: {
+                active: false,
+                x: 0,
+                z: 55,
+                rotorAngle: 0,
+                timer: 60
+            },
+
+            civilians: [],
+            policeUnits: [],
+            pedestrians: [],
+            scenery: [],
+            droppedSpoilers: [],
+            speechBubbles: [],
+            particles: [],
+            exhaustSmoke: [],
+            birds: []
+        };
+
+        function project3D(normX, z) {
+            const horizonY = ch * 0.29;
+            const bottomY = ch * 0.84;
+            const clampedZ = Math.max(-12, Math.min(120, z));
+
+            const focal = 26;
+            const scale = focal / (focal + Math.max(-18, clampedZ));
+
+            const screenY = horizonY + (bottomY - horizonY) * scale;
+            const baseHalfWidth = cw * 0.43 * state.smoothWidthFactor;
+            const roadHalfWidth = baseHalfWidth * scale;
+
+            const depthNorm = Math.max(0, clampedZ / 120);
+            const curveShift = state.roadCurve * Math.pow(depthNorm, 1.8) * (cw * 0.38);
+
+            const camShift = -state.player.x * 26 * (1 - scale);
+            const roadCenterX = (cw * 0.5) + curveShift + camShift;
+            const screenX = roadCenterX + normX * roadHalfWidth;
+
+            return { screenX, screenY, scale, roadHalfWidth, roadCenterX };
+        }
+
+        function resetGameSession() {
+            const profile = BUS_PROFILES[selectedBusIndex];
+            state.survivalTime = 0;
+            state.distance = 0;
+            state.zoneIndex = 0;
+            state.zoneProgress = 0;
+            state.smoothWidthFactor = ROAD_ZONES[0].widthFactor;
+            state.roadCurve = 0;
+            state.targetRoadCurve = 0.25;
+            state.wettuCrashCount = 0;
+            state.cameraShake = 0;
+
+            state.player.x = -0.36;
+            state.player.targetX = -0.36;
+            state.player.speed = 148;
+            state.player.maxSpeed = profile.baseMaxSpeed;
+            state.player.tilt = 0;
+            state.player.partyLightsOn = true;
+            state.player.passLightTimer = 0;
+            state.player.nitroTimer = 0;
+            state.player.nitroCount = 3;
+            state.player.spoilerAttached = true;
+            state.player.strobeTimer = 0;
+            state.player.consecutiveHits = 0;
+            state.player.hitCooldownTimer = 0;
+            state.player.hitInvulnTimer = 0;
+
+            state.rivalCtb.x = 0.22;
+            state.rivalCtb.z = 36;
+            state.rivalCtb.tauntTimer = 3.5;
+
+            state.chopper.active = false;
+            state.civilians = [];
+            state.policeUnits = [];
+            state.pedestrians = [];
+            state.scenery = [];
+            state.droppedSpoilers = [];
+            state.speechBubbles = [];
+            state.particles = [];
+            state.exhaustSmoke = [];
+            state.birds = [];
+
+            for (let b = 0; b < 14; b++) {
+                state.birds.push({
+                    x: Math.random() * cw,
+                    y: 18 + Math.random() * (ch * 0.20),
+                    vx: 16 + Math.random() * 26,
+                    vy: (Math.random() - 0.5) * 4,
+                    wingPhase: Math.random() * Math.PI * 2,
+                    flapSpeed: 7 + Math.random() * 5,
+                    scale: 0.55 + Math.random() * 0.65
+                });
+            }
+
+            for (let z = 4; z <= 120; z += 6) {
+                spawnSceneryPair(z);
+            }
+
+            updateUIButtons();
+            updateHitMeterHUD();
+            document.getElementById('hudRoadType').textContent = ROAD_ZONES[0].title;
+            document.getElementById('lblNextZone').textContent = 'Next: ' + ROAD_ZONES[0].nextTitle;
+            showMinimalBanner(`${profile.name} (${profile.plate}) 3D Chase Started!`, 3000);
+        }
+
+        function startChaseGame() {
+            audio.init();
+            document.getElementById('garageOverlay').classList.add('hidden');
+            document.getElementById('gameOverOverlay').classList.add('hidden');
+            resetGameSession();
+            gameRunning = true;
+            audio.playMusicalBusHorn();
+            spawnSpeechBubble(cw * 0.5, ch * 0.36, 'ලංගමයා එක්ක හැප්පෙන්න එපා මල්ලි! පුළුවන් නම් අල්ලපන්!', '#ef4444', 3.0);
+        }
+
+        let isDragging = false;
+        let dragStartX = 0;
+        let busStartNormX = 0;
+        const keys = { left: false, right: false };
+
+        canvas.addEventListener('pointerdown', (e) => {
+            audio.init();
+            isDragging = true;
+            const rect = canvas.getBoundingClientRect();
+            dragStartX = e.clientX - rect.left;
+            busStartNormX = state.player.targetX;
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isDragging || !gameRunning) return;
+            const rect = canvas.getBoundingClientRect();
+            const px = e.clientX - rect.left;
+            const deltaNorm = ((px - dragStartX) / (cw * 0.38));
+            state.player.targetX = Math.max(-0.88, Math.min(0.88, busStartNormX + deltaNorm));
+        });
+
+        window.addEventListener('pointerup', () => { isDragging = false; });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+            if (e.code === 'Space') triggerPassLight();
+            if (e.code === 'KeyH') triggerMusicalHorn();
+            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') triggerNitroBoost();
+            if (e.code === 'KeyQ') triggerSpoilerDrop();
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+        });
+
+        function triggerMusicalHorn() {
+            if (!gameRunning) return;
+            audio.init();
+            audio.playMusicalBusHorn();
+
+            let kidsCheered = false;
+            state.pedestrians.forEach(ped => {
+                if (ped.role === 'kids' && !ped.reacted && ped.z > 2 && ped.z < 55) {
+                    ped.reacted = true;
+                    ped.jumpTimer = 1.6;
+                    kidsCheered = true;
+                    const proj = project3D(ped.side * 1.18, ped.z);
+                    spawnSpeechBubble(proj.screenX, proj.screenY - 35, 'ගැම්මක් අයියේ! නලාව සුපිරි! 🔥🙌', '#38bdf8', 2.4);
+                }
+            });
+
+            if (kidsCheered) {
+                audio.playKidsCheerVoice();
+                state.player.nitroCount = Math.min(5, state.player.nitroCount + 1);
+                updateUIButtons();
+                showMinimalBanner('Kids Cheered for Musical Horn! +1 FREE NITRO! 🎺🔥', 2400);
+            } else {
+                spawnSpeechBubble(cw * 0.5, ch * 0.55, '🎵 ටැට්-ටැට්-ටාරා-ටා! 🎺', '#facc15', 1.1);
+            }
+        }
+
+        function triggerPassLight() {
+            if (!gameRunning) return;
+            audio.init();
+            state.player.passLightModeIdx = (state.player.passLightModeIdx + 1) % PASS_LIGHT_MODES.length;
+            state.player.passLightTimer = 0.85;
+            document.getElementById('lblPassMode').textContent = PASS_LIGHT_MODES[state.player.passLightModeIdx].name.split(' ')[0];
+            audio.playMusicalBusHorn();
+
+            state.civilians.forEach(civ => {
+                if (civ.z > 4 && civ.z < 65 && Math.abs(civ.x - state.player.x) < 0.42) {
+                    civ.targetX = civ.isOncoming ? 0.78 : -0.78;
+                }
+            });
+        }
+
+        function togglePartyLights() {
+            state.player.partyLightsOn = !state.player.partyLightsOn;
+            const btn = document.getElementById('btnPartyLight');
+            if (state.player.partyLightsOn) {
+                btn.classList.add('party-active-glow');
+            } else {
+                btn.classList.remove('party-active-glow');
+            }
+        }
+
+        function triggerNitroBoost() {
+            if (!gameRunning) return;
+            audio.init();
+            if (state.player.nitroCount <= 0 || state.player.nitroTimer > 0) return;
+            state.player.nitroCount--;
+            state.player.nitroTimer = 3.2;
+            state.cameraShake = 6;
+            updateUIButtons();
+            showMinimalBanner('NITRO TURBO ENGAGED! Ramming Speed! 🔥🚀', 2200);
+        }
+
+        function triggerSpoilerDrop() {
+            if (!gameRunning) return;
+            audio.init();
+            if (!state.player.spoilerAttached) return;
+            state.player.spoilerAttached = false;
+            state.droppedSpoilers.push({
+                x: state.player.x,
+                z: 2,
+                rot: 0
+            });
+            updateUIButtons();
+            showMinimalBanner('Bat-Wing Spoiler Dropped as Police Road Trap! 💥', 2200);
+        }
+
+        function triggerStrobeLaser() {
+            if (!gameRunning || !state.chopper.active) return;
+            audio.init();
+            state.player.strobeTimer = 4.5;
+            showMinimalBanner('Strobe Lasers Activated! Chopper Blinded! ⚡🚁', 2200);
+        }
+
+        function updateUIButtons() {
+            document.getElementById('badgeNitro').textContent = state.player.nitroCount;
+            document.getElementById('btnNitro').disabled = state.player.nitroCount <= 0;
+            document.getElementById('btnSpoiler').disabled = !state.player.spoilerAttached;
+            document.getElementById('lblSpoilerState').textContent = state.player.spoilerAttached ? 'TRAP' : 'USED';
+            document.getElementById('btnStrobe').disabled = !state.chopper.active;
+        }
+
+        function spawnSceneryPair(zPos) {
+            const zone = ROAD_ZONES[state.zoneIndex];
+            const shopLabels = ['ගාමිණී කඩේ', 'TEA SHOP', 'දන්සල', 'බුලත් කඩේ', 'සිරි හෝටලය'];
+            const roofCols = ['#b91c1c', '#047857', '#1d4ed8', '#b45309'];
+
+            [-1, 1].forEach(side => {
+                let type = 'palm';
+                if (zone.hasTreeCanopy && Math.random() < 0.65) {
+                    type = 'canopy';
+                } else if (Math.random() < 0.24) {
+                    type = 'shop';
+                }
+                state.scenery.push({
+                    side,
+                    z: zPos + (Math.random() * 2 - 1),
+                    type,
+                    label: shopLabels[Math.floor(Math.random() * shopLabels.length)],
+                    roofColor: roofCols[Math.floor(Math.random() * roofCols.length)]
+                });
+            });
+        }
+
+        function spawnCivilianTraffic() {
+            const zone = ROAD_ZONES[state.zoneIndex];
+            const isOncoming = zone.twoWay && Math.random() < 0.48;
+            const laneX = isOncoming
+                ? (0.28 + Math.random() * 0.42)
+                : (-0.68 + Math.random() * 0.42);
+
+            const types = ['tuktuk', 'car', 'lorry'];
+            const vType = types[Math.floor(Math.random() * types.length)];
+            const colors = ['#dc2626', '#eab308', '#0284c7', '#16a34a', '#9333ea', '#f97316'];
+
+            state.civilians.push({
+                x: laneX,
+                targetX: laneX,
+                z: 118,
+                speed: isOncoming ? -95 : 85,
+                vType,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                isOncoming,
+                crashed: false,
+                vx: 0,
+                flyY: 0,
+                vy: 0,
+                spin: 0
+            });
+        }
+
+        function spawnPoliceUnit() {
+            const activePolice = state.policeUnits.filter(p => !p.wrecked).length;
+            if (activePolice >= 3) return;
+            const pType = Math.random() < 0.45 ? 'bike' : 'car';
+            state.policeUnits.push({
+                x: state.player.x + (Math.random() - 0.5) * 0.5,
+                z: -8,
+                pType,
+                sirenPhase: Math.random() * 6,
+                wrecked: false,
+                vx: 0,
+                flyY: 0,
+                vy: 0,
+                spin: 0
+            });
+        }
+
+        function spawnPedestrian() {
+            const side = Math.random() < 0.5 ? -1 : 1;
+            const role = Math.random() < 0.52 ? 'achchi' : 'kids';
+            state.pedestrians.push({
+                side,
+                z: 115,
+                role,
+                reacted: false,
+                stickAngle: -0.3,
+                jumpTimer: 0
+            });
+        }
+
+        function spawnSpeechBubble(x, y, text, borderColor = '#facc15', life = 2.2) {
+            state.speechBubbles.push({ x, y, text, borderColor, life });
+        }
+
+        function spawnCrashParticles(x, y, color, count = 14) {
+            for (let i = 0; i < count; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const spd = 40 + Math.random() * 140;
+                state.particles.push({
+                    x,
+                    y,
+                    vx: Math.cos(ang) * spd,
+                    vy: Math.sin(ang) * spd - 40,
+                    size: 2.5 + Math.random() * 4,
+                    color,
+                    life: 0.45 + Math.random() * 0.45
+                });
+            }
+        }
+
+        function updateGame(dt) {
+            const profile = BUS_PROFILES[selectedBusIndex];
+            const p = state.player;
+
+            state.survivalTime += dt;
+            if (state.cameraShake > 0) state.cameraShake = Math.max(0, state.cameraShake - dt * 18);
+
+            state.zoneProgress += dt / state.zoneDuration;
+            if (state.zoneProgress >= 1) {
+                state.zoneProgress = 0;
+                state.zoneIndex = (state.zoneIndex + 1) % ROAD_ZONES.length;
+                const newZone = ROAD_ZONES[state.zoneIndex];
+                document.getElementById('hudRoadType').textContent = newZone.title;
+                document.getElementById('lblNextZone').textContent = 'Next: ' + newZone.nextTitle;
+                showMinimalBanner(`Entering ${newZone.title}! Watch the traffic!`, 2600);
+
+                if (!p.spoilerAttached) {
+                    p.spoilerAttached = true;
+                    updateUIButtons();
+                }
+            }
+            document.getElementById('roadZoneBar').style.width = `${Math.round(state.zoneProgress * 100)}%`;
+
+            const targetWidth = ROAD_ZONES[state.zoneIndex].widthFactor;
+            state.smoothWidthFactor += (targetWidth - state.smoothWidthFactor) * dt * 1.8;
+
+            state.curveTimer -= dt;
+            if (state.curveTimer <= 0) {
+                state.curveTimer = 4 + Math.random() * 5;
+                state.targetRoadCurve = (Math.random() - 0.5) * 0.85;
+            }
+            state.roadCurve += (state.targetRoadCurve - state.roadCurve) * dt * 0.9;
+
+            if (keys.left) p.targetX = Math.max(-0.88, p.targetX - dt * 1.35);
+            if (keys.right) p.targetX = Math.min(0.88, p.targetX + dt * 1.35);
+
+            const prevX = p.x;
+            p.x += (p.targetX - p.x) * Math.min(1, dt * profile.handling);
+            const lateralVel = (p.x - prevX) / Math.max(0.001, dt);
+            p.tilt += (Math.max(-0.35, Math.min(0.35, lateralVel * 0.14)) - p.tilt) * Math.min(1, dt * 10);
+
+            if (p.passLightTimer > 0) p.passLightTimer = Math.max(0, p.passLightTimer - dt);
+            if (p.strobeTimer > 0) p.strobeTimer = Math.max(0, p.strobeTimer - dt);
+            if (p.hitInvulnTimer > 0) p.hitInvulnTimer = Math.max(0, p.hitInvulnTimer - dt);
+
+            if (p.consecutiveHits > 0) {
+                p.hitCooldownTimer -= dt;
+                if (p.hitCooldownTimer <= 0) {
+                    p.consecutiveHits = Math.max(0, p.consecutiveHits - 1);
+                    p.hitCooldownTimer = 3.2;
+                    updateHitMeterHUD();
+                }
+            }
+
+            let topSpeed = p.maxSpeed + (p.spoilerAttached ? 12 : 0);
+            if (p.nitroTimer > 0) {
+                p.nitroTimer = Math.max(0, p.nitroTimer - dt);
+                topSpeed += 68;
+            }
+            p.speed += (topSpeed - p.speed) * dt * 1.45;
+
+            const forwardUnitsPerSec = p.speed * 0.36;
+            state.distance += forwardUnitsPerSec * dt;
+
+            state.birds.forEach(bird => {
+                bird.x += (bird.vx - state.roadCurve * 18) * dt;
+                bird.y += Math.sin(state.survivalTime * 1.5 + bird.wingPhase) * 0.15;
+                bird.wingPhase += bird.flapSpeed * dt;
+                if (bird.x > cw + 40) {
+                    bird.x = -35;
+                    bird.y = 16 + Math.random() * (ch * 0.19);
+                } else if (bird.x < -40) {
+                    bird.x = cw + 35;
+                }
+            });
+
+            if (Math.random() < (p.nitroTimer > 0 ? 0.9 : 0.45)) {
+                const pProj = project3D(p.x, 0);
+                state.exhaustSmoke.push({
+                    x: pProj.screenX + (Math.random() > 0.5 ? 36 : -36),
+                    y: pProj.screenY - 6,
+                    vx: (Math.random() - 0.5) * 28,
+                    vy: 18 + Math.random() * 25,
+                    r: 4 + Math.random() * 5,
+                    alpha: p.nitroTimer > 0 ? 0.55 : 0.32,
+                    color: p.nitroTimer > 0 ? '56, 189, 248' : '30, 41, 59'
+                });
+            }
+            for (let i = state.exhaustSmoke.length - 1; i >= 0; i--) {
+                const sm = state.exhaustSmoke[i];
+                sm.x += sm.vx * dt;
+                sm.y += sm.vy * dt;
+                sm.r += dt * 18;
+                sm.alpha -= dt * 0.65;
+                if (sm.alpha <= 0) state.exhaustSmoke.splice(i, 1);
+            }
+
+            document.getElementById('hudSpeed').textContent = Math.round(p.speed).toString().padStart(3, '0');
+            document.getElementById('hudWettuCount').textContent = state.wettuCrashCount;
+
+            const wantedLevel = state.survivalTime > 45 ? 3 : (state.survivalTime > 18 ? 2 : 1);
+            const starIcons = document.getElementById('hudStars').children;
+            for (let i = 0; i < 3; i++) {
+                starIcons[i].className = i < wantedLevel
+                    ? 'fa-solid fa-star text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.8)]'
+                    : 'fa-solid fa-star text-slate-700';
+            }
+
+            if (wantedLevel === 3 && !state.chopper.active && state.survivalTime > 48) {
+                state.chopper.active = true;
+                updateUIButtons();
+                showMinimalBanner('Police Attack Chopper Overhead! Use LASER to blind! 🚁', 2800);
+            }
+            if (state.chopper.active) {
+                state.chopper.rotorAngle += dt * 28;
+                state.chopper.x += (p.x - state.chopper.x) * dt * 1.5;
+            }
+
+            const ctb = state.rivalCtb;
+            ctb.x += Math.sin(state.survivalTime * 1.1) * dt * 0.18;
+            ctb.x = Math.max(-0.6, Math.min(0.6, ctb.x));
+
+            if (p.nitroTimer > 0) {
+                ctb.z = Math.max(6, ctb.z - dt * 18);
+                if (ctb.z <= 8.5 && Math.abs(p.x - ctb.x) < 0.38) {
+                    audio.playHeavyCrash();
+                    state.cameraShake = 12;
+                    ctb.z = 38;
+                    state.wettuCrashCount += 2;
+                    const ctbProj = project3D(ctb.x, 14);
+                    spawnCrashParticles(ctbProj.screenX, ctbProj.screenY - 30, '#facc15', 22);
+                    spawnSpeechBubble(ctbProj.screenX, ctbProj.screenY - 65, 'අම්මෝ බාහුබලි පිටිපස්සෙන් ඇන්නා යකෝ! 💥🚌', '#ef4444', 2.5);
+                    showMinimalBanner('RAMMED THE RIVAL CTB BUS! +2 BONUS! 💥🔥', 2400);
+                }
+            } else {
+                ctb.z += (38 - ctb.z) * dt * 0.8;
+            }
+
+            for (let i = state.scenery.length - 1; i >= 0; i--) {
+                const sc = state.scenery[i];
+                sc.z -= forwardUnitsPerSec * dt;
+                if (sc.z < -6) {
+                    state.scenery.splice(i, 1);
+                }
+            }
+            if (state.scenery.length < 32) {
+                spawnSceneryPair(118);
+            }
+
+            if (Math.random() < dt * 0.55 && state.pedestrians.length < 4) {
+                spawnPedestrian();
+            }
+            for (let i = state.pedestrians.length - 1; i >= 0; i--) {
+                const ped = state.pedestrians[i];
+                ped.z -= forwardUnitsPerSec * dt;
+                if (ped.jumpTimer > 0) ped.jumpTimer = Math.max(0, ped.jumpTimer - dt);
+
+                if (!ped.reacted && ped.z < 18 && ped.z > 2) {
+                    if (ped.role === 'achchi') {
+                        ped.reacted = true;
+                        ped.stickAngle = -0.95;
+                        audio.playAchchiScoldVoice();
+                        const proj = project3D(ped.side * 1.12, ped.z);
+                        const scolds = [
+                            'කොහේ යනවද ගස් බල්ලෝ! 🦯😡',
+                            'මිනිස්සු මරන්නද හදන්නේ යකෝ! 🦯',
+                            'හෙමින් පලයන් බූරුවෝ! 🦯😠'
+                        ];
+                        spawnSpeechBubble(
+                            proj.screenX,
+                            proj.screenY - 48,
+                            scolds[Math.floor(Math.random() * scolds.length)],
+                            '#f43f5e',
+                            2.3
+                        );
+                    } else if (ped.role === 'kids' && Math.random() < 0.04) {
+                        const proj = project3D(ped.side * 1.12, ped.z);
+                        spawnSpeechBubble(proj.screenX, proj.screenY - 45, 'අයියේ නලාව ගහපන්කෝ! (Press HORN) 🎺', '#38bdf8', 1.8);
+                    }
+                }
+
+                if (ped.z < -6) state.pedestrians.splice(i, 1);
+            }
+
+            if (Math.random() < dt * 0.95 && state.civilians.length < 5) {
+                spawnCivilianTraffic();
+            }
+            for (let i = state.civilians.length - 1; i >= 0; i--) {
+                const civ = state.civilians[i];
+                const relSpeed = forwardUnitsPerSec - civ.speed;
+                civ.z -= relSpeed * dt;
+
+                if (civ.crashed) {
+                    civ.x += civ.vx * dt;
+                    civ.z -= forwardUnitsPerSec * dt * 0.8;
+                    civ.flyY += civ.vy * dt;
+                    civ.vy += 450 * dt;
+                    civ.spin += dt * 10;
+                    if (civ.z < -10 || civ.flyY > 120) state.civilians.splice(i, 1);
+                    continue;
+                }
+
+                civ.x += (civ.targetX - civ.x) * dt * 1.5;
+
+                if (Math.abs(civ.z) < 4.2 && Math.abs(civ.x - p.x) < 0.32) {
+                    civ.crashed = true;
+                    civ.vx = (civ.x >= p.x ? 1 : -1) * 2.4;
+                    civ.vy = -175;
+                    audio.playHeavyCrash();
+                    state.cameraShake = 11;
+                    const proj = project3D(civ.x, Math.max(1, civ.z));
+                    spawnCrashParticles(proj.screenX, proj.screenY - 22, '#f97316', 18);
+
+                    if (p.nitroTimer <= 0 && p.hitInvulnTimer <= 0) {
+                        p.hitInvulnTimer = 0.45;
+                        p.speed = Math.max(68, p.speed * 0.68);
+                        p.consecutiveHits++;
+                        p.hitCooldownTimer = 5.0;
+                        updateHitMeterHUD();
+
+                        if (p.consecutiveHits === 4) {
+                            showMinimalBanner('⚠️ WARNING: 4 Rapid Hits! Drive carefully or Engine will fail!', 2400);
+                            spawnSpeechBubble(proj.screenX, proj.screenY - 55, 'බලාගෙන මල්ලි! තව දෙපාරක් ලඟ ලඟ වැදුනොත් එන්ජිම ඉවරයි! ⚠️', '#f43f5e', 2.2);
+                        } else if (p.consecutiveHits === 5) {
+                            showMinimalBanner('🚨 CRITICAL: 5 Rapid Hits! ONE MORE HIT = GAME OVER!', 2500);
+                        } else if (p.consecutiveHits > 5) {
+                            triggerGameOver();
+                            return;
+                        } else {
+                            showMinimalBanner(`Impact! Speed Reduced (${p.consecutiveHits}/5 Rapid Hits)`, 1600);
+                        }
+                    }
+                }
+
+                if (civ.z < -10 || civ.z > 130) state.civilians.splice(i, 1);
+            }
+
+            if (Math.random() < dt * 0.65) {
+                spawnPoliceUnit();
+            }
+
+            for (let i = state.policeUnits.length - 1; i >= 0; i--) {
+                const pol = state.policeUnits[i];
+                pol.sirenPhase += dt * 14;
+
+                if (pol.wrecked) {
+                    pol.x += pol.vx * dt;
+                    pol.z -= forwardUnitsPerSec * dt * 0.85;
+                    pol.flyY += pol.vy * dt;
+                    pol.vy += 440 * dt;
+                    pol.spin += dt * 11;
+                    if (pol.z < -12 || pol.flyY > 140) state.policeUnits.splice(i, 1);
+                    continue;
+                }
+
+                const desiredZ = 7 + (i % 3) * 4.5;
+                pol.z += (desiredZ - pol.z) * dt * 1.8;
+                pol.x += (p.x - pol.x) * dt * 2.1;
+
+                for (let s = state.droppedSpoilers.length - 1; s >= 0; s--) {
+                    const sp = state.droppedSpoilers[s];
+                    if (Math.abs(pol.z - sp.z) < 5 && Math.abs(pol.x - sp.x) < 0.38) {
+                        pol.wrecked = true;
+                        pol.vx = (Math.random() - 0.5) * 3;
+                        pol.vy = -210;
+                        state.wettuCrashCount++;
+                        audio.playHeavyCrash();
+                        const proj = project3D(pol.x, pol.z);
+                        spawnCrashParticles(proj.screenX, proj.screenY - 20, '#ef4444', 20);
+                        spawnSpeechBubble(proj.screenX, proj.screenY - 50, 'ස්පොයිලරේ වැදුනා යකෝ! 💥🚓', '#38bdf8', 2.0);
+                        state.droppedSpoilers.splice(s, 1);
+                        break;
+                    }
+                }
+
+                if (!pol.wrecked) {
+                    for (let c = 0; c < state.civilians.length; c++) {
+                        const civ = state.civilians[c];
+                        if (!civ.crashed && Math.abs(pol.z - civ.z) < 4.5 && Math.abs(pol.x - civ.x) < 0.34) {
+                            pol.wrecked = true;
+                            pol.vx = (pol.x >= civ.x ? 1 : -1) * 2.5;
+                            pol.vy = -220;
+                            civ.crashed = true;
+                            civ.vx = -pol.vx * 0.8;
+                            civ.vy = -140;
+                            state.wettuCrashCount++;
+                            audio.playHeavyCrash();
+                            state.cameraShake = 8;
+                            const proj = project3D(pol.x, pol.z);
+                            spawnCrashParticles(proj.screenX, proj.screenY - 24, '#38bdf8', 22);
+                            spawnSpeechBubble(proj.screenX, proj.screenY - 55, 'සුපිරි වෙට්ටුව! පොලිසිය ලොරියේ ඇන්නා! 💥🚓', '#22c55e', 2.4);
+                            showMinimalBanner('WETTUVA CRASH! Police unit wrecked into traffic! 💥🚓', 2300);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            for (let i = state.droppedSpoilers.length - 1; i >= 0; i--) {
+                const sp = state.droppedSpoilers[i];
+                sp.z -= forwardUnitsPerSec * dt * 0.5;
+                sp.rot += dt * 8;
+                if (sp.z < -10) state.droppedSpoilers.splice(i, 1);
+            }
+
+            for (let i = state.particles.length - 1; i >= 0; i--) {
+                const pt = state.particles[i];
+                pt.x += pt.vx * dt;
+                pt.y += pt.vy * dt;
+                pt.vy += 260 * dt;
+                pt.life -= dt;
+                if (pt.life <= 0) state.particles.splice(i, 1);
+            }
+
+            for (let i = state.speechBubbles.length - 1; i >= 0; i--) {
+                const sb = state.speechBubbles[i];
+                sb.y -= dt * 18;
+                sb.life -= dt;
+                if (sb.life <= 0) state.speechBubbles.splice(i, 1);
+            }
+
+            const activePoliceCount = state.policeUnits.filter(u => !u.wrecked).length;
+            audio.updateLoops(
+                Math.min(1, p.speed / 260),
+                p.nitroTimer > 0,
+                activePoliceCount,
+                dt
+            );
+        }
+
+        function draw3DSkyAndHorizonRoad() {
+            const zone = ROAD_ZONES[state.zoneIndex];
+            const horizonY = ch * 0.29;
+
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+            if (zone.id === 0) {
+                skyGrad.addColorStop(0, '#025080');
+                skyGrad.addColorStop(0.55, '#0ea5e9');
+                skyGrad.addColorStop(1, '#e0f2fe');
+            } else if (zone.id === 1) {
+                skyGrad.addColorStop(0, '#0369a1');
+                skyGrad.addColorStop(0.6, '#38bdf8');
+                skyGrad.addColorStop(1, '#dcfce7');
+            } else {
+                skyGrad.addColorStop(0, '#172554');
+                skyGrad.addColorStop(0.6, '#0284c7');
+                skyGrad.addColorStop(1, '#bae6fd');
+            }
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, cw, horizonY + 8);
+
+            const panOffset = ((state.roadCurve * -85) % cw);
+            if (REAL_BG_IMAGES.clouds.complete && REAL_BG_IMAGES.clouds.naturalWidth > 0) {
+                ctx.save();
+                ctx.globalAlpha = 0.42;
+                ctx.drawImage(REAL_BG_IMAGES.clouds, panOffset, 0, cw + 90, horizonY);
+                ctx.drawImage(REAL_BG_IMAGES.clouds, panOffset - cw, 0, cw + 90, horizonY);
+                ctx.restore();
+            }
+
+            const sunX = cw * 0.74 - state.roadCurve * 48;
+            const sunY = horizonY * 0.28;
+            const sunGrad = ctx.createRadialGradient(sunX, sunY, 4, sunX, sunY, 150);
+            sunGrad.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
+            sunGrad.addColorStop(0.22, 'rgba(254, 243, 199, 0.55)');
+            sunGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = sunGrad;
+            ctx.fillRect(0, 0, cw, horizonY);
+
+            const cloudShift = (state.roadCurve * -46) + (state.survivalTime * 3);
+            [0.14, 0.46, 0.79].forEach((cx, idx) => {
+                const x = ((cw * cx + cloudShift) % (cw + 140)) - 50;
+                const y = horizonY * (0.36 + (idx % 2) * 0.15);
+                ctx.fillStyle = 'rgba(148, 163, 184, 0.42)';
+                ctx.beginPath();
+                ctx.arc(x, y + 6, 30, 0, Math.PI * 2);
+                ctx.arc(x + 24, y + 8, 22, 0, Math.PI * 2);
+                ctx.arc(x - 24, y + 8, 20, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+                ctx.beginPath();
+                ctx.arc(x, y, 29, 0, Math.PI * 2);
+                ctx.arc(x + 22, y + 3, 21, 0, Math.PI * 2);
+                ctx.arc(x - 22, y + 4, 19, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            if (REAL_BG_IMAGES.mountains.complete && REAL_BG_IMAGES.mountains.naturalWidth > 0) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(0, horizonY + 4);
+                for (let mx = 0; mx <= cw + 20; mx += 18) {
+                    const mh = 38 + Math.sin(mx * 0.015 + state.roadCurve * 0.6) * 18 + Math.cos(mx * 0.035) * 10;
+                    ctx.lineTo(mx, horizonY - mh);
+                }
+                ctx.lineTo(cw, horizonY + 4);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(REAL_BG_IMAGES.mountains, panOffset * 0.6 - 40, horizonY - 75, cw + 120, 82);
+                ctx.fillStyle = 'rgba(15, 118, 110, 0.25)';
+                ctx.fillRect(0, horizonY - 75, cw, 82);
+                ctx.restore();
+            } else {
+                ctx.fillStyle = '#2d6a64';
+                ctx.beginPath();
+                ctx.moveTo(0, horizonY + 2);
+                for (let mx = 0; mx <= cw + 20; mx += 24) {
+                    const mh = 32 + Math.sin(mx * 0.018 + state.roadCurve * 0.6) * 15 + Math.cos(mx * 0.04) * 8;
+                    ctx.lineTo(mx, horizonY - mh);
+                }
+                ctx.lineTo(cw, horizonY + 2);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            const hillGrad = ctx.createLinearGradient(0, horizonY - 28, 0, horizonY + 3);
+            hillGrad.addColorStop(0, '#15803d');
+            hillGrad.addColorStop(0.7, '#166534');
+            hillGrad.addColorStop(1, '#052e16');
+            ctx.fillStyle = hillGrad;
+            ctx.beginPath();
+            ctx.moveTo(0, horizonY + 3);
+            for (let mx = 0; mx <= cw + 20; mx += 14) {
+                const mh = 15 + Math.cos(mx * 0.032 + state.roadCurve) * 9 + Math.sin(mx * 0.09) * 4;
+                ctx.lineTo(mx, horizonY - mh);
+            }
+            ctx.lineTo(cw, horizonY + 3);
+            ctx.closePath();
+            ctx.fill();
+
+            const mistGrad = ctx.createLinearGradient(0, horizonY - 14, 0, horizonY + 4);
+            mistGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+            mistGrad.addColorStop(0.5, 'rgba(240, 253, 244, 0.35)');
+            mistGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = mistGrad;
+            ctx.fillRect(0, horizonY - 14, cw, 18);
+
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineCap = 'round';
+            state.birds.forEach(bird => {
+                const flapY = Math.sin(bird.wingPhase) * 4.5 * bird.scale;
+                const span = 6.5 * bird.scale;
+                ctx.lineWidth = Math.max(1, 1.5 * bird.scale);
+                ctx.beginPath();
+                ctx.moveTo(bird.x - span, bird.y - flapY);
+                ctx.quadraticCurveTo(bird.x - span * 0.4, bird.y - Math.abs(flapY) * 0.5, bird.x, bird.y);
+                ctx.quadraticCurveTo(bird.x + span * 0.4, bird.y - Math.abs(flapY) * 0.5, bird.x + span, bird.y - flapY);
+                ctx.stroke();
+            });
+
+            const totalSlices = 82;
+            const zMax = 120;
+            const zMin = -8;
+
+            for (let i = totalSlices - 1; i >= 0; i--) {
+                const zFar = zMin + ((i + 1) / totalSlices) * (zMax - zMin);
+                const zNear = zMin + (i / totalSlices) * (zMax - zMin);
+
+                const pFar = project3D(0, zFar);
+                const pNear = project3D(0, zNear);
+
+                const depthRatio = Math.max(0, Math.min(1, zNear / zMax));
+                const worldZ = zNear + state.distance * 1.45;
+                const dashCycle = ((worldZ % 12) + 12) % 12;
+
+                const grassL = Math.round(22 + (1 - depthRatio) * 14);
+                ctx.fillStyle = zone.id === 1
+                    ? `hsl(142, 62%, ${grassL - 4}%)`
+                    : `hsl(138, 55%, ${grassL}%)`;
+                ctx.fillRect(0, pFar.screenY, cw, pNear.screenY - pFar.screenY + 1.5);
+
+                ctx.fillStyle = zone.id === 1 ? '#78350f' : '#57534e';
+                ctx.beginPath();
+                ctx.moveTo(pFar.roadCenterX - pFar.roadHalfWidth * 1.18, pFar.screenY);
+                ctx.lineTo(pFar.roadCenterX + pFar.roadHalfWidth * 1.18, pFar.screenY);
+                ctx.lineTo(pNear.roadCenterX + pNear.roadHalfWidth * 1.18, pNear.screenY + 1);
+                ctx.lineTo(pNear.roadCenterX - pNear.roadHalfWidth * 1.18, pNear.screenY + 1);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#1e2430';
+                ctx.beginPath();
+                ctx.moveTo(pFar.roadCenterX - pFar.roadHalfWidth, pFar.screenY);
+                ctx.lineTo(pFar.roadCenterX + pFar.roadHalfWidth, pFar.screenY);
+                ctx.lineTo(pNear.roadCenterX + pNear.roadHalfWidth, pNear.screenY + 1);
+                ctx.lineTo(pNear.roadCenterX - pNear.roadHalfWidth, pNear.screenY + 1);
+                ctx.closePath();
+                ctx.fill();
+
+                const trackHalfFar = pFar.roadHalfWidth * 0.14;
+                const trackHalfNear = pNear.roadHalfWidth * 0.14;
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.24)';
+                [-0.45, 0.45].forEach(laneOffset => {
+                    const cxFar = pFar.roadCenterX + laneOffset * pFar.roadHalfWidth;
+                    const cxNear = pNear.roadCenterX + laneOffset * pNear.roadHalfWidth;
+                    ctx.beginPath();
+                    ctx.moveTo(cxFar - trackHalfFar, pFar.screenY);
+                    ctx.lineTo(cxFar + trackHalfFar, pFar.screenY);
+                    ctx.lineTo(cxNear + trackHalfNear, pNear.screenY + 1);
+                    ctx.lineTo(cxNear - trackHalfNear, pNear.screenY + 1);
+                    ctx.closePath();
+                    ctx.fill();
+                });
+
+                if (dashCycle < 3.2) {
+                    ctx.fillStyle = zone.id === 1 ? 'rgba(2, 6, 23, 0.28)' : 'rgba(2, 6, 23, 0.14)';
+                    ctx.beginPath();
+                    ctx.moveTo(pFar.roadCenterX - pFar.roadHalfWidth, pFar.screenY);
+                    ctx.lineTo(pFar.roadCenterX + pFar.roadHalfWidth * 0.3, pFar.screenY);
+                    ctx.lineTo(pNear.roadCenterX + pNear.roadHalfWidth * 0.3, pNear.screenY + 1);
+                    ctx.lineTo(pNear.roadCenterX - pFar.roadHalfWidth, pNear.screenY + 1);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                const edgeWFar = Math.max(0.8, 2.2 * pFar.scale);
+                const edgeWNear = Math.max(1.2, 2.8 * pNear.scale);
+                ctx.fillStyle = 'rgba(248, 250, 252, 0.85)';
+                [-0.94, 0.94].forEach(edgePos => {
+                    const exFar = pFar.roadCenterX + edgePos * pFar.roadHalfWidth;
+                    const exNear = pNear.roadCenterX + edgePos * pNear.roadHalfWidth;
+                    ctx.beginPath();
+                    ctx.moveTo(exFar - edgeWFar, pFar.screenY);
+                    ctx.lineTo(exFar + edgeWFar, pFar.screenY);
+                    ctx.lineTo(exNear + edgeWNear, pNear.screenY + 1);
+                    ctx.lineTo(exNear - edgeWNear, pNear.screenY + 1);
+                    ctx.closePath();
+                    ctx.fill();
+                });
+
+                const lineWFar = Math.max(0.9, 2.4 * pFar.scale);
+                const lineWNear = Math.max(1.4, 3.2 * pNear.scale);
+                if (dashCycle < 6.5) {
+                    ctx.fillStyle = zone.twoWay ? '#facc15' : '#f8fafc';
+                    ctx.beginPath();
+                    ctx.moveTo(pFar.roadCenterX - lineWFar, pFar.screenY);
+                    ctx.lineTo(pFar.roadCenterX + lineWFar, pFar.screenY);
+                    ctx.lineTo(pNear.roadCenterX + lineWNear, pNear.screenY + 1);
+                    ctx.lineTo(pNear.roadCenterX - lineWNear, pNear.screenY + 1);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+        }
+
+        function drawAshokLeylandRear3D(screenX, groundY, scale, perspectiveSkewX, tilt, profile, isRivalCtb, opts = {}) {
+            const w = 124 * scale;
+            const rearH = 136 * scale;
+            const roofD = 16 * scale;
+            const sideW = perspectiveSkewX * 28 * scale;
+            const suspBounce = Math.sin(performance.now() * 0.032 + (isRivalCtb ? 2 : 0)) * 1.4 * scale;
+
+            ctx.save();
+            ctx.translate(screenX, groundY + suspBounce);
+            ctx.rotate(tilt * 0.32);
+
+            if (opts.passLightActive) {
+                const mode = PASS_LIGHT_MODES[state.player.passLightModeIdx];
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                const beamGrad = ctx.createLinearGradient(0, -rearH, 0, -rearH - 240 * scale);
+                beamGrad.addColorStop(0, mode.color1);
+                beamGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = beamGrad;
+                ctx.beginPath();
+                ctx.moveTo(-w * 0.62, -rearH * 0.45);
+                ctx.lineTo(-w * 2.1, -rearH - 230 * scale);
+                ctx.lineTo(w * 2.1, -rearH - 230 * scale);
+                ctx.lineTo(w * 0.62, -rearH * 0.45);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+
+            const shadowGrad = ctx.createRadialGradient(sideW * 0.2, 2 * scale, w * 0.1, sideW * 0.2, 2 * scale, w * 0.72);
+            shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.88)');
+            shadowGrad.addColorStop(0.65, 'rgba(0, 0, 0, 0.55)');
+            shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = shadowGrad;
+            ctx.beginPath();
+            ctx.ellipse(sideW * 0.25, 3 * scale, w * 0.72, 14 * scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            const brakeGlow = ctx.createRadialGradient(0, 4 * scale, 2 * scale, 0, 4 * scale, w * 0.58);
+            brakeGlow.addColorStop(0, 'rgba(239, 68, 68, 0.38)');
+            brakeGlow.addColorStop(1, 'rgba(239, 68, 68, 0)');
+            ctx.fillStyle = brakeGlow;
+            ctx.beginPath();
+            ctx.ellipse(0, 4 * scale, w * 0.58, 10 * scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            if (!isRivalCtb && opts.partyLightsOn) {
+                const hue = (performance.now() * 0.25) % 360;
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.fillStyle = `hsla(${hue}, 100%, 55%, 0.35)`;
+                ctx.beginPath();
+                ctx.ellipse(0, 1 * scale, w * 0.56, 9 * scale, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            const tireW = 21 * scale;
+            const tireH = 20 * scale;
+            ctx.fillStyle = '#09090b';
+            ctx.fillRect(-w * 0.46, -tireH * 0.65, tireW, tireH);
+            ctx.fillRect(w * 0.46 - tireW, -tireH * 0.65, tireW, tireH);
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(-w * 0.25, -4 * scale, w * 0.5, 4 * scale);
+
+            if (Math.abs(sideW) > 1.2 * scale) {
+                const isRightSide = sideW > 0;
+                const edgeX = isRightSide ? w * 0.5 : -w * 0.5;
+                const farX = edgeX + sideW;
+                const farTopY = -rearH - roofD + 6 * scale;
+                const farBotY = -10 * scale;
+
+                const sideGrad = ctx.createLinearGradient(edgeX, -rearH, farX, farBotY);
+                sideGrad.addColorStop(0, isRivalCtb ? '#7f1d1d' : profile.primaryColor);
+                sideGrad.addColorStop(0.5, isRivalCtb ? '#450a0a' : profile.sideColor);
+                sideGrad.addColorStop(1, '#09090b');
+                ctx.fillStyle = sideGrad;
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = Math.max(1, 1.3 * scale);
+                ctx.beginPath();
+                ctx.moveTo(edgeX, -rearH + 2 * scale);
+                ctx.lineTo(farX, farTopY);
+                ctx.lineTo(farX, farBotY);
+                ctx.lineTo(edgeX, -8 * scale);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                if (!isRivalCtb && profile.id === 2) {
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.beginPath();
+                    ctx.moveTo(edgeX, -rearH * 0.35);
+                    ctx.lineTo(farX, farTopY + rearH * 0.52);
+                    ctx.lineTo(farX, farTopY + rearH * 0.68);
+                    ctx.lineTo(edgeX, -rearH * 0.18);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                const winGlassGrad = ctx.createLinearGradient(edgeX, -rearH * 0.84, edgeX, -rearH * 0.48);
+                winGlassGrad.addColorStop(0, '#0284c7');
+                winGlassGrad.addColorStop(0.35, '#090d16');
+                winGlassGrad.addColorStop(1, '#020617');
+                ctx.fillStyle = winGlassGrad;
+                ctx.beginPath();
+                ctx.moveTo(edgeX, -rearH * 0.83);
+                ctx.lineTo(farX, farTopY + rearH * 0.15);
+                ctx.lineTo(farX, farTopY + rearH * 0.45);
+                ctx.lineTo(edgeX, -rearH * 0.49);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = Math.max(0.8, 1.1 * scale);
+                for (let p = 1; p <= 4; p++) {
+                    const t = p / 5;
+                    const px = edgeX + (farX - edgeX) * t;
+                    const pyTop = -rearH * 0.83 + ((farTopY + rearH * 0.15) - (-rearH * 0.83)) * t;
+                    const pyBot = -rearH * 0.49 + ((farTopY + rearH * 0.45) - (-rearH * 0.49)) * t;
+                    ctx.beginPath();
+                    ctx.moveTo(px, pyTop);
+                    ctx.lineTo(px, pyBot);
+                    ctx.stroke();
+                }
+
+                ctx.strokeStyle = '#f8fafc';
+                ctx.lineWidth = Math.max(1.5, 2.8 * scale);
+                ctx.beginPath();
+                ctx.moveTo(edgeX, -rearH * 0.45);
+                ctx.lineTo(farX, farTopY + rearH * 0.48);
+                ctx.stroke();
+
+                const wheelX = edgeX + (farX - edgeX) * 0.55;
+                const wheelY = -12 * scale;
+                ctx.fillStyle = '#09090b';
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = Math.max(1, 1.8 * scale);
+                ctx.beginPath();
+                ctx.ellipse(wheelX, wheelY, Math.max(2, Math.abs(sideW) * 0.22), 13 * scale, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            const roofGrad = ctx.createLinearGradient(0, -rearH - roofD, 0, -rearH);
+            roofGrad.addColorStop(0, '#f8fafc');
+            roofGrad.addColorStop(0.3, isRivalCtb ? '#991b1b' : profile.primaryColor);
+            roofGrad.addColorStop(1, isRivalCtb ? '#7f1d1d' : profile.secondaryColor);
+            ctx.fillStyle = roofGrad;
+            ctx.beginPath();
+            ctx.moveTo(-w * 0.47, -rearH + 2 * scale);
+            ctx.lineTo(-w * 0.41 + sideW * 0.85, -rearH - roofD + 4 * scale);
+            ctx.lineTo(w * 0.41 + sideW * 0.85, -rearH - roofD + 4 * scale);
+            ctx.lineTo(w * 0.47, -rearH + 2 * scale);
+            ctx.closePath();
+            ctx.fill();
+
+            const backGrad = ctx.createLinearGradient(-w * 0.5, -rearH, w * 0.5, 0);
+            if (isRivalCtb) {
+                backGrad.addColorStop(0, '#7f1d1d');
+                backGrad.addColorStop(0.25, '#dc2626');
+                backGrad.addColorStop(0.5, '#ef4444');
+                backGrad.addColorStop(0.75, '#dc2626');
+                backGrad.addColorStop(1, '#450a0a');
+            } else {
+                backGrad.addColorStop(0, profile.secondaryColor);
+                backGrad.addColorStop(0.18, profile.primaryColor);
+                backGrad.addColorStop(0.5, profile.secondaryColor);
+                backGrad.addColorStop(0.82, profile.primaryColor);
+                backGrad.addColorStop(1, '#09090b');
+            }
+            ctx.fillStyle = backGrad;
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = Math.max(1.2, 1.8 * scale);
+            ctx.beginPath();
+            ctx.roundRect(-w * 0.5, -rearH, w, rearH - 9 * scale, 8 * scale);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+            ctx.fillRect(-w * 0.49, -rearH + 6 * scale, 3 * scale, rearH - 18 * scale);
+            ctx.fillRect(w * 0.49 - 3 * scale, -rearH + 6 * scale, 3 * scale, rearH - 18 * scale);
+
+            const crownY = -rearH + 4 * scale;
+            const crownH = 15 * scale;
+            const crownGrad = ctx.createLinearGradient(0, crownY, 0, crownY + crownH);
+            crownGrad.addColorStop(0, profile.id === 1 && !isRivalCtb ? '#ec4899' : '#18181b');
+            crownGrad.addColorStop(1, '#09090b');
+            ctx.fillStyle = crownGrad;
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth = Math.max(0.9, 1.2 * scale);
+            ctx.beginPath();
+            ctx.roundRect(-w * 0.42, crownY, w * 0.84, crownH, 5 * scale);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#facc15';
+            ctx.font = `900 ${Math.max(5.5, 9 * scale)}px Orbitron, "Noto Sans Sinhala", sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText(isRivalCtb ? 'SLTB EXPRESS' : profile.topBanner, 0, crownY + 11 * scale);
+
+            const winY = crownY + crownH + 3 * scale;
+            const winH = 38 * scale;
+            const glassGrad = ctx.createLinearGradient(-w * 0.45, winY, w * 0.45, winY + winH);
+            glassGrad.addColorStop(0, '#090d16');
+            glassGrad.addColorStop(0.45, '#020617');
+            glassGrad.addColorStop(0.55, '#0f172a');
+            glassGrad.addColorStop(1, '#020617');
+            ctx.fillStyle = glassGrad;
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = Math.max(1, 1.5 * scale);
+            ctx.beginPath();
+            ctx.roundRect(-w * 0.45, winY, w * 0.90, winH, 4 * scale);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+            ctx.beginPath();
+            ctx.moveTo(-w * 0.35, winY);
+            ctx.lineTo(-w * 0.10, winY);
+            ctx.lineTo(-w * 0.30, winY + winH);
+            ctx.lineTo(-w * 0.44, winY + winH);
+            ctx.closePath();
+            ctx.fill();
+
+            if (!isRivalCtb) {
+                if (profile.id === 3) {
+                    const curtainCols = ['#38bdf8', '#ec4899', '#facc15', '#22c55e', '#f43f5e'];
+                    for (let c = 0; c < 6; c++) {
+                        ctx.fillStyle = curtainCols[c % curtainCols.length];
+                        ctx.fillRect(-w * 0.41 + c * (w * 0.14), winY + 2 * scale, w * 0.11, 3.8 * scale);
+                    }
+                }
+
+                if (profile.id === 1) {
+                    ctx.fillStyle = '#facc15';
+                    ctx.beginPath();
+                    ctx.arc(-w * 0.32, winY + 13 * scale, 6.5 * scale, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#09090b';
+                    ctx.beginPath();
+                    ctx.arc(-w * 0.32, winY + 13 * scale, 3.2 * scale, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = `700 ${Math.max(4, 5.4 * scale)}px Inter, "Noto Sans Sinhala", sans-serif`;
+                ctx.fillText(profile.koreanQuote, 0, winY + 10.5 * scale);
+
+                if (profile.id === 0) {
+                    for (let q = 0; q < 6; q++) {
+                        ctx.fillStyle = '#0284c7';
+                        ctx.fillRect((-28 + q * 9.8) * scale, winY + 13 * scale, 7.8 * scale, 4 * scale);
+                    }
+                }
+
+                ctx.fillStyle = profile.id === 0 ? '#ef4444' : (profile.id === 1 ? '#f472b6' : '#f8fafc');
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = Math.max(0.6, 1.0 * scale);
+                ctx.font = `900 italic ${Math.max(7, 12.5 * scale)}px Orbitron, "Noto Sans Sinhala", sans-serif`;
+                ctx.fillText(profile.sinhalaScript, 0, winY + 27 * scale);
+                ctx.strokeText(profile.sinhalaScript, 0, winY + 27 * scale);
+
+                ctx.fillStyle = '#facc15';
+                ctx.font = `700 ${Math.max(4, 5.2 * scale)}px "Noto Sans Sinhala", Inter, sans-serif`;
+                ctx.fillText(profile.subQuote, 0, winY + 35 * scale);
+
+                ctx.fillStyle = '#cbd5e1';
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = Math.max(0.8, 1 * scale);
+                ctx.beginPath();
+                ctx.arc(w * 0.34, winY + 10 * scale, 5.5 * scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            } else {
+                ctx.fillStyle = '#facc15';
+                ctx.font = `900 ${Math.max(6, 10.5 * scale)}px "Noto Sans Sinhala", sans-serif`;
+                ctx.fillText('ලංගම EXPRESS', 0, winY + 22 * scale);
+            }
+
+            const midBarY = winY + winH + 3 * scale;
+            const chromeGrad = ctx.createLinearGradient(-w * 0.5, 0, w * 0.5, 0);
+            chromeGrad.addColorStop(0, '#94a3b8');
+            chromeGrad.addColorStop(0.5, '#ffffff');
+            chromeGrad.addColorStop(1, '#94a3b8');
+            ctx.fillStyle = chromeGrad;
+            ctx.fillRect(-w * 0.5, midBarY - 2 * scale, w, 3.2 * scale);
+
+            const plateW = 26 * scale;
+            const plateH = 14.5 * scale;
+            ctx.fillStyle = chromeGrad;
+            ctx.beginPath();
+            ctx.roundRect(-plateW * 0.78, midBarY + 2 * scale, plateW * 1.56, plateH + 2.5 * scale, 2.5 * scale);
+            ctx.fill();
+
+            ctx.fillStyle = '#facc15';
+            ctx.strokeStyle = '#09090b';
+            ctx.lineWidth = Math.max(0.6, 0.9 * scale);
+            ctx.fillRect(-plateW * 0.5, midBarY + 3.2 * scale, plateW, plateH);
+            ctx.strokeRect(-plateW * 0.5, midBarY + 3.2 * scale, plateW, plateH);
+
+            ctx.fillStyle = '#09090b';
+            ctx.font = `900 ${Math.max(4.5, 6.5 * scale)}px Inter, sans-serif`;
+            ctx.fillText(isRivalCtb ? 'NC-1142' : profile.plate, 0, midBarY + 12.8 * scale);
+
+            if (!isRivalCtb && profile.tailStyle === 'lambo') {
+                ctx.fillStyle = '#18181b';
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = Math.max(0.8, 1.1 * scale);
+                [-1, 1].forEach(dir => {
+                    ctx.beginPath();
+                    ctx.moveTo(dir * w * 0.47, midBarY + 2 * scale);
+                    ctx.lineTo(dir * plateW * 0.82, midBarY + 2 * scale);
+                    ctx.lineTo(dir * plateW * 0.95, midBarY + 16.5 * scale);
+                    ctx.lineTo(dir * w * 0.45, midBarY + 16.5 * scale);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.beginPath();
+                    ctx.moveTo(dir * w * 0.43, midBarY + 6 * scale);
+                    ctx.lineTo(dir * plateW * 0.95, midBarY + 6 * scale);
+                    ctx.moveTo(dir * w * 0.43, midBarY + 12 * scale);
+                    ctx.lineTo(dir * plateW * 0.95, midBarY + 12 * scale);
+                    ctx.stroke();
+                });
+            } else if (!isRivalCtb && profile.tailStyle === 'led_matrix_bar') {
+                [-1, 1].forEach(dir => {
+                    const bx = dir === -1 ? -w * 0.47 : plateW * 0.84;
+                    const bw = w * 0.47 - plateW * 0.84;
+                    ctx.fillStyle = '#e2e8f0';
+                    ctx.fillRect(bx, midBarY + 2.5 * scale, bw, 13 * scale);
+                    ctx.fillStyle = '#dc2626';
+                    ctx.fillRect(bx + 1.5 * scale, midBarY + 4 * scale, bw - 3 * scale, 6.5 * scale);
+                    ctx.fillStyle = '#facc15';
+                    ctx.fillRect(bx + 1.5 * scale, midBarY + 10.5 * scale, bw - 3 * scale, 3.5 * scale);
+                });
+            } else {
+                for (let b = 0; b < 3; b++) {
+                    const boxW = 9.5 * scale;
+                    const boxH = 11 * scale;
+                    const lx = -w * 0.47 + b * (boxW + 1.4 * scale);
+                    const rx = w * 0.47 - (3 - b) * (boxW + 1.4 * scale);
+
+                    [lx, rx].forEach(xPos => {
+                        ctx.fillStyle = '#e2e8f0';
+                        ctx.fillRect(xPos, midBarY + 3 * scale, boxW, boxH);
+                        ctx.fillStyle = '#dc2626';
+                        ctx.fillRect(xPos + 1.2 * scale, midBarY + 4.2 * scale, boxW - 2.4 * scale, boxH - 2.4 * scale);
+                        ctx.fillStyle = '#facc15';
+                        ctx.fillRect(xPos + 2.6 * scale, midBarY + 6 * scale, boxW - 5.2 * scale, boxH - 6 * scale);
+                    });
+                }
+            }
+
+            const bayY = midBarY + 19 * scale;
+            const bayH = 29 * scale;
+
+            if (!isRivalCtb && (profile.lowerBayStyle === 'gloss_black' || profile.lowerBayStyle === 'dhamrejin_glass')) {
+                ctx.fillStyle = '#020617';
+                ctx.strokeStyle = profile.id === 1 ? '#f472b6' : '#dc2626';
+                ctx.lineWidth = Math.max(1, 1.5 * scale);
+                ctx.beginPath();
+                ctx.roundRect(-w * 0.43, bayY, w * 0.86, bayH * 0.78, 3 * scale);
+                ctx.fill();
+                ctx.stroke();
+
+                if (profile.id === 1) {
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.font = `700 ${Math.max(4, 5.2 * scale)}px Inter, sans-serif`;
+                    ctx.fillText('Online Booking/www.dhamrejin.lk', 0, bayY + bayH * 0.68);
+                }
+            } else if (!isRivalCtb && profile.lowerBayStyle === 'perahera_elephants') {
+                ctx.fillStyle = '#020617';
+                ctx.strokeStyle = '#facc15';
+                ctx.lineWidth = Math.max(1, 1.3 * scale);
+                ctx.beginPath();
+                ctx.roundRect(-w * 0.43, bayY, w * 0.86, bayH * 0.78, 3 * scale);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#f8fafc';
+                [-22, 0, 22].forEach((ex, idx) => {
+                    const r = (idx === 1 ? 6.5 : 5) * scale;
+                    ctx.beginPath();
+                    ctx.arc(ex * scale, bayY + 12 * scale, r, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillRect((ex - 4) * scale, bayY + 12 * scale, 8 * scale, 7 * scale);
+                });
+            } else if (!isRivalCtb && profile.lowerBayStyle === 'geisha_mural') {
+                ctx.fillStyle = '#f8fafc';
+                ctx.beginPath();
+                ctx.arc(-8 * scale, bayY + 11 * scale, 8.5 * scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#09090b';
+                ctx.beginPath();
+                ctx.arc(-8 * scale, bayY + 8 * scale, 6.5 * scale, Math.PI, 0);
+                ctx.fill();
+
+                ctx.fillStyle = '#dc2626';
+                ctx.beginPath();
+                ctx.arc(-3 * scale, bayY + 15 * scale, 8 * scale, -Math.PI * 0.8, -0.2);
+                ctx.lineTo(-3 * scale, bayY + 15 * scale);
+                ctx.fill();
+
+                [-1, 1].forEach(dir => {
+                    for (let c = 0; c < 3; c++) {
+                        const cx = dir * (16 + c * 9) * scale;
+                        ctx.fillStyle = '#e2e8f0';
+                        ctx.beginPath();
+                        ctx.arc(cx, bayY + 18 * scale, 4 * scale, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#09090b';
+                        ctx.beginPath();
+                        ctx.arc(cx, bayY + 18 * scale, 2.5 * scale, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+            } else if (!isRivalCtb && profile.lowerBayStyle === 'portrait_mural') {
+                ctx.fillStyle = '#422006';
+                ctx.beginPath();
+                ctx.roundRect(-w * 0.42, bayY, w * 0.84, bayH * 0.78, 3 * scale);
+                ctx.fill();
+
+                ctx.fillStyle = '#451a03';
+                ctx.beginPath();
+                ctx.arc(14 * scale, bayY + 11 * scale, 9 * scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fed7aa';
+                ctx.beginPath();
+                ctx.arc(13 * scale, bayY + 11 * scale, 5.5 * scale, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (!isRivalCtb) {
+                ctx.fillStyle = '#991b1b';
+                ctx.fillRect(-4 * scale, bayY + 4 * scale, 18 * scale, 11 * scale);
+                ctx.fillStyle = '#16a34a';
+                ctx.fillRect(-9 * scale, bayY + 4 * scale, 4 * scale, 11 * scale);
+                ctx.fillStyle = '#f97316';
+                ctx.fillRect(-5 * scale, bayY + 4 * scale, 3 * scale, 11 * scale);
+                ctx.fillStyle = '#facc15';
+                ctx.fillRect(1 * scale, bayY + 7 * scale, 8 * scale, 5 * scale);
+
+                ctx.fillStyle = '#09090b';
+                ctx.beginPath();
+                ctx.arc(-19 * scale, bayY + 9 * scale, 6 * scale, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(18 * scale, bayY + 4 * scale, 11 * scale, 12 * scale);
+            }
+
+            ctx.fillStyle = chromeGrad;
+            ctx.fillRect(-w * 0.24, bayY + bayH - 7 * scale, w * 0.48, 2.2 * scale);
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(-w * 0.45, bayY + bayH - 4.5 * scale, 20 * scale, 4 * scale);
+            ctx.fillRect(w * 0.45 - 20 * scale, bayY + bayH - 4.5 * scale, 20 * scale, 4 * scale);
+
+            if (!isRivalCtb && profile.hasLadder) {
+                const ladX = -w * 0.40;
+                ctx.strokeStyle = '#f8fafc';
+                ctx.lineWidth = Math.max(1.3, 2.3 * scale);
+                ctx.beginPath();
+                ctx.moveTo(ladX, crownY + 2 * scale);
+                ctx.lineTo(ladX, midBarY + 16 * scale);
+                ctx.moveTo(ladX + 12.5 * scale, crownY + 2 * scale);
+                ctx.lineTo(ladX + 12.5 * scale, midBarY + 16 * scale);
+                for (let ry = crownY + 10 * scale; ry < midBarY + 14 * scale; ry += 10 * scale) {
+                    ctx.moveTo(ladX, ry);
+                    ctx.lineTo(ladX + 12.5 * scale, ry);
+                }
+                ctx.stroke();
+
+                ctx.fillStyle = '#f8fafc';
+                ctx.strokeStyle = '#09090b';
+                ctx.lineWidth = Math.max(0.8, 1 * scale);
+                ctx.beginPath();
+                ctx.moveTo(ladX + 6.2 * scale, winY + 4 * scale);
+                ctx.lineTo(ladX + 14.5 * scale, winY + 14 * scale);
+                ctx.lineTo(ladX + 6.2 * scale, winY + 24 * scale);
+                ctx.lineTo(ladX - 2 * scale, winY + 14 * scale);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            const flapY = -16 * scale;
+            const flapH = 15 * scale;
+            ctx.fillStyle = isRivalCtb ? '#1e293b' : (profile.id === 1 ? '#be123c' : '#09090b');
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = Math.max(0.8, 1.1 * scale);
+            ctx.fillRect(-w * 0.46, flapY, w * 0.92, flapH);
+            ctx.strokeRect(-w * 0.46, flapY, w * 0.92, flapH);
+
+            if (!isRivalCtb) {
+                ctx.fillStyle = '#facc15';
+                ctx.font = `900 italic ${Math.max(4.5, 7.2 * scale)}px Orbitron, "Noto Sans Sinhala", sans-serif`;
+                ctx.fillText(profile.mudflapTop, 0, flapY + 7.5 * scale);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `700 ${Math.max(3.8, 5.0 * scale)}px Inter, "Noto Sans Sinhala", sans-serif`;
+                ctx.fillText(profile.mudflapBot, 0, flapY + 13.5 * scale);
+
+                if (profile.hasQuadExhaust) {
+                    [-w * 0.36, w * 0.26].forEach(startX => {
+                        for (let e = 0; e < 4; e++) {
+                            ctx.fillStyle = '#09090b';
+                            ctx.strokeStyle = '#f8fafc';
+                            ctx.lineWidth = Math.max(0.8, 1.2 * scale);
+                            ctx.beginPath();
+                            ctx.arc(startX + e * 5.2 * scale, flapY + 2.5 * scale, 2.3 * scale, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.stroke();
+                        }
+                    });
+                }
+            }
+
+            if (!isRivalCtb && opts.spoilerAttached) {
+                const spTopY = -rearH - roofD + 3 * scale;
+                if (profile.spoilerType === 'batwing_beacon' || profile.spoilerType === 'batwing_spots') {
+                    ctx.fillStyle = profile.primaryColor;
+                    ctx.strokeStyle = '#09090b';
+                    ctx.lineWidth = Math.max(1, 1.5 * scale);
+                    [-1, 1].forEach(dir => {
+                        ctx.beginPath();
+                        ctx.moveTo(dir * w * 0.46, -rearH + 4 * scale);
+                        ctx.lineTo(dir * w * 0.56, spTopY - 24 * scale);
+                        ctx.lineTo(dir * w * 0.34, spTopY + 2 * scale);
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+                    });
+
+                    ctx.fillStyle = profile.primaryColor;
+                    ctx.strokeStyle = '#f8fafc';
+                    ctx.lineWidth = Math.max(0.8, 1.1 * scale);
+                    ctx.beginPath();
+                    ctx.roundRect(-w * 0.46, spTopY - 8 * scale, w * 0.92, 9 * scale, 3 * scale);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    if (profile.spoilerType === 'batwing_beacon') {
+                        ctx.fillStyle = '#f97316';
+                        ctx.beginPath();
+                        ctx.arc(-w * 0.24, spTopY - 11 * scale, 4 * scale, 0, Math.PI * 2);
+                        ctx.arc(w * 0.24, spTopY - 11 * scale, 4 * scale, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else {
+                        for (let s = 0; s < 8; s++) {
+                            ctx.fillStyle = '#fef08a';
+                            ctx.beginPath();
+                            ctx.arc((-31.5 + s * 9) * scale, spTopY - 2 * scale, 2.2 * scale, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                } else if (profile.spoilerType === 'devil_horn') {
+                    ctx.fillStyle = '#991b1b';
+                    ctx.strokeStyle = '#f8fafc';
+                    ctx.lineWidth = Math.max(1, 1.3 * scale);
+                    ctx.beginPath();
+                    ctx.moveTo(-w * 0.48, -rearH + 2 * scale);
+                    ctx.quadraticCurveTo(-w * 0.58, spTopY - 22 * scale, -w * 0.28, spTopY - 8 * scale);
+                    ctx.lineTo(w * 0.28, spTopY - 8 * scale);
+                    ctx.quadraticCurveTo(w * 0.58, spTopY - 22 * scale, w * 0.48, -rearH + 2 * scale);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                } else {
+                    ctx.fillStyle = profile.primaryColor;
+                    ctx.strokeStyle = '#facc15';
+                    ctx.lineWidth = Math.max(1, 1.4 * scale);
+                    ctx.fillRect(-w * 0.48, spTopY - 7 * scale, w * 0.96, 8 * scale);
+                    ctx.strokeRect(-w * 0.48, spTopY - 7 * scale, w * 0.96, 8 * scale);
+                }
+            }
+
+            if (!isRivalCtb && opts.partyLightsOn) {
+                const tick = Math.floor(performance.now() / 85);
+                const ledCols = ['#ef4444', '#22c55e', '#38bdf8', '#facc15', '#ec4899'];
+                for (let d = 0; d < 11; d++) {
+                    ctx.fillStyle = ledCols[(d + tick) % ledCols.length];
+                    const lx = -w * 0.45 + (d * (w * 0.9)) / 10;
+                    ctx.fillRect(lx - 1.5 * scale, -rearH, 3 * scale, 3 * scale);
+                    ctx.fillRect(lx - 1.5 * scale, flapY - 2 * scale, 3 * scale, 3 * scale);
+                }
+            }
+
+            ctx.restore();
+        }
+
+        function drawCivilian3D(c) {
+            const proj = project3D(c.x, c.z);
+            if (proj.scale <= 0.05) return;
+            const s = proj.scale;
+            const skewSide = ((cw * 0.5 - proj.screenX) / (cw * 0.42)) * 16 * s;
+
+            ctx.save();
+            ctx.translate(proj.screenX, proj.screenY + (c.flyY || 0) * s);
+            if (c.crashed) ctx.rotate(c.spin);
+
+            ctx.fillStyle = 'rgba(0,0,0,0.68)';
+            ctx.beginPath();
+            ctx.ellipse(skewSide * 0.2, 2 * s, 44 * s, 8 * s, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (c.vType === 'lorry') {
+                const w = 92 * s, h = 102 * s;
+                ctx.fillStyle = '#09090b';
+                ctx.fillRect(-w * 0.45, -12 * s, 16 * s, 14 * s);
+                ctx.fillRect(w * 0.45 - 16 * s, -12 * s, 16 * s, 14 * s);
+
+                if (Math.abs(skewSide) > 1 * s) {
+                    const edgeX = skewSide > 0 ? w * 0.5 : -w * 0.5;
+                    ctx.fillStyle = '#451a03';
+                    ctx.beginPath();
+                    ctx.moveTo(edgeX, -h);
+                    ctx.lineTo(edgeX + skewSide, -h - 8 * s);
+                    ctx.lineTo(edgeX + skewSide, -10 * s);
+                    ctx.lineTo(edgeX, -8 * s);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                const lorryGrad = ctx.createLinearGradient(-w * 0.5, -h, w * 0.5, 0);
+                lorryGrad.addColorStop(0, '#78350f');
+                lorryGrad.addColorStop(0.5, '#b45309');
+                lorryGrad.addColorStop(1, '#451a03');
+                ctx.fillStyle = lorryGrad;
+                ctx.strokeStyle = '#facc15';
+                ctx.lineWidth = Math.max(1, 1.5 * s);
+                ctx.beginPath();
+                ctx.roundRect(-w * 0.5, -h, w, h - 8 * s, 5 * s);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#14532d';
+                ctx.fillRect(-w * 0.48, -h, w * 0.96, h * 0.25);
+
+                ctx.fillStyle = '#18181b';
+                ctx.fillRect(-w * 0.44, -h * 0.46, w * 0.88, 16 * s);
+                ctx.fillStyle = '#facc15';
+                ctx.font = `700 ${Math.max(4, 7 * s)}px "Noto Sans Sinhala", sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText('බුදු සරණයි', 0, -h * 0.34);
+
+                ctx.fillStyle = c.isOncoming ? '#fef08a' : '#ef4444';
+                ctx.fillRect(-w * 0.44, -18 * s, 14 * s, 6 * s);
+                ctx.fillRect(w * 0.44 - 14 * s, -18 * s, 14 * s, 6 * s);
+            } else if (c.vType === 'tuktuk') {
+                const w = 56 * s, h = 68 * s;
+                ctx.fillStyle = '#09090b';
+                ctx.fillRect(-w * 0.46, -10 * s, 10 * s, 12 * s);
+                ctx.fillRect(w * 0.46 - 10 * s, -10 * s, 10 * s, 12 * s);
+
+                ctx.fillStyle = c.color;
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = Math.max(0.8, 1 * s);
+                ctx.beginPath();
+                ctx.roundRect(-w * 0.48, -h * 0.54, w * 0.96, h * 0.46, 5 * s);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#18181b';
+                ctx.beginPath();
+                ctx.roundRect(-w * 0.44, -h, w * 0.88, h * 0.52, 8 * s);
+                ctx.fill();
+
+                ctx.fillStyle = '#020617';
+                ctx.beginPath();
+                ctx.roundRect(-w * 0.30, -h * 0.86, w * 0.60, h * 0.24, 3 * s);
+                ctx.fill();
+
+                if (!c.isOncoming) {
+                    ctx.fillStyle = '#09090b';
+                    ctx.strokeStyle = '#cbd5e1';
+                    ctx.beginPath();
+                    ctx.arc(0, -h * 0.35, 9 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                ctx.fillStyle = c.isOncoming ? '#fef08a' : '#ef4444';
+                ctx.fillRect(-w * 0.42, -16 * s, 9 * s, 5 * s);
+                ctx.fillRect(w * 0.42 - 9 * s, -16 * s, 9 * s, 5 * s);
+            } else {
+                const w = 74 * s, h = 60 * s;
+                ctx.fillStyle = '#09090b';
+                ctx.fillRect(-w * 0.46, -10 * s, 13 * s, 12 * s);
+                ctx.fillRect(w * 0.46 - 13 * s, -10 * s, 13 * s, 12 * s);
+
+                const carGrad = ctx.createLinearGradient(-w * 0.5, -h, w * 0.5, 0);
+                carGrad.addColorStop(0, '#334155');
+                carGrad.addColorStop(0.5, c.color);
+                carGrad.addColorStop(1, '#0f172a');
+                ctx.fillStyle = carGrad;
+                ctx.beginPath();
+                ctx.roundRect(-w * 0.5, -h * 0.62, w, h * 0.54, 6 * s);
+                ctx.fill();
+
+                ctx.fillStyle = '#090d16';
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = Math.max(0.8, 1 * s);
+                ctx.beginPath();
+                ctx.moveTo(-w * 0.42, -h * 0.60);
+                ctx.lineTo(-w * 0.32, -h);
+                ctx.lineTo(w * 0.32, -h);
+                ctx.lineTo(w * 0.42, -h * 0.60);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#facc15';
+                ctx.fillRect(-10 * s, -22 * s, 20 * s, 7 * s);
+                ctx.fillStyle = c.isOncoming ? '#fef08a' : '#ef4444';
+                ctx.fillRect(-w * 0.45, -25 * s, 14 * s, 6 * s);
+                ctx.fillRect(w * 0.45 - 14 * s, -25 * s, 14 * s, 6 * s);
+            }
+
+            ctx.restore();
+        }
+
+        function drawPolice3D(pol) {
+            const proj = project3D(pol.x, pol.z);
+            if (proj.scale <= 0.05) return;
+            const s = proj.scale;
+            const isRed = Math.sin(pol.sirenPhase) > 0;
+
+            ctx.save();
+            ctx.translate(proj.screenX, proj.screenY + (pol.flyY || 0) * s);
+            if (pol.wrecked) ctx.rotate(pol.spin);
+
+            const w = (pol.pType === 'bike' ? 36 : 72) * s;
+            const h = (pol.pType === 'bike' ? 62 : 62) * s;
+
+            ctx.fillStyle = 'rgba(0,0,0,0.55)';
+            ctx.beginPath(); ctx.ellipse(0, 0, w * 0.55, 6 * s, 0, 0, Math.PI * 2); ctx.fill();
+
+            if (pol.pType === 'bike') {
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(-w * 0.25, -h * 0.65, w * 0.5, h * 0.6);
+                ctx.fillStyle = '#1e3a8a';
+                ctx.beginPath(); ctx.arc(0, -h * 0.72, 9 * s, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath(); ctx.arc(0, -h * 0.9, 7 * s, 0, Math.PI * 2); ctx.fill();
+            } else {
+                ctx.fillStyle = '#f8fafc';
+                ctx.beginPath(); ctx.roundRect(-w * 0.5, -h * 0.62, w, h * 0.56, 5 * s); ctx.fill();
+                ctx.fillStyle = '#1e3a8a';
+                ctx.fillRect(-w * 0.48, -h * 0.35, w * 0.96, 12 * s);
+                ctx.fillStyle = '#090d16';
+                ctx.beginPath(); ctx.roundRect(-w * 0.4, -h, w * 0.8, h * 0.42, 4 * s); ctx.fill();
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(-14 * s, -h - 5 * s, 13 * s, 5 * s);
+                ctx.fillStyle = '#3b82f6';
+                ctx.fillRect(1 * s, -h - 5 * s, 13 * s, 5 * s);
+            }
+
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.fillStyle = isRed ? 'rgba(239, 68, 68, 0.75)' : 'rgba(59, 130, 246, 0.75)';
+            ctx.beginPath();
+            ctx.arc((isRed ? -10 : 10) * s, -h, 22 * s, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            ctx.restore();
+        }
+
+        function drawScenery3D(sc) {
+            const proj = project3D(sc.side * 1.24, sc.z);
+            if (proj.scale <= 0.04) return;
+            const s = proj.scale;
+
+            ctx.save();
+            ctx.translate(proj.screenX, proj.screenY);
+
+            if (sc.type === 'palm' || sc.type === 'canopy') {
+                if (Math.floor(sc.z) % 2 === 0) {
+                    ctx.fillStyle = '#cbd5e1';
+                    ctx.fillRect(-sc.side * 6 * s, -155 * s, 5 * s, 155 * s);
+                    ctx.fillStyle = '#64748b';
+                    ctx.fillRect(-sc.side * 18 * s, -148 * s, 28 * s, 3 * s);
+                }
+
+                ctx.strokeStyle = '#473c35';
+                ctx.lineWidth = Math.max(2, 10 * s);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.quadraticCurveTo(-sc.side * 16 * s, -95 * s, -sc.side * 26 * s, -188 * s);
+                ctx.stroke();
+
+                const crownX = -sc.side * 26 * s;
+                const crownY = -188 * s;
+                const frondCols = ['#14532d', '#15803d', '#166534', '#22c55e'];
+                for (let f = 0; f < 8; f++) {
+                    ctx.save();
+                    ctx.translate(crownX, crownY);
+                    ctx.rotate((f * Math.PI) / 4 + Math.sin(performance.now() * 0.002 + f) * 0.05);
+                    ctx.fillStyle = frondCols[f % frondCols.length];
+                    ctx.beginPath();
+                    ctx.ellipse(28 * s, 0, 32 * s, 7 * s, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                if (sc.type === 'canopy' || sc.z < 35) {
+                    ctx.fillStyle = 'rgba(20, 83, 45, 0.9)';
+                    ctx.beginPath();
+                    ctx.ellipse(-sc.side * 75 * s, -195 * s, 85 * s, 32 * s, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = 'rgba(34, 197, 94, 0.65)';
+                    ctx.beginPath();
+                    ctx.ellipse(-sc.side * 60 * s, -182 * s, 62 * s, 20 * s, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else {
+                const sw = 86 * s, sh = 74 * s;
+                ctx.fillStyle = '#f1f5f9';
+                ctx.fillRect(-sw * 0.72, -38 * s, 10 * s, 38 * s);
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(-sw * 0.62, -32 * s, 16 * s, 28 * s);
+
+                ctx.fillStyle = '#fef3c7';
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = Math.max(0.8, 1 * s);
+                ctx.fillRect(-sw * 0.5, -sh, sw, sh);
+                ctx.strokeRect(-sw * 0.5, -sh, sw, sh);
+
+                ctx.fillStyle = sc.roofColor;
+                ctx.beginPath();
+                ctx.moveTo(-sw * 0.58, -sh);
+                ctx.lineTo(-sw * 0.48, -sh - 18 * s);
+                ctx.lineTo(sw * 0.48, -sh - 18 * s);
+                ctx.lineTo(sw * 0.58, -sh);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#991b1b';
+                ctx.fillRect(-sw * 0.46, -sh + 4 * s, sw * 0.92, 16 * s);
+                ctx.fillStyle = '#facc15';
+                ctx.font = `800 ${Math.max(5, 9 * s)}px "Noto Sans Sinhala", sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText(sc.label, 0, -sh + 15 * s);
+            }
+
+            ctx.restore();
+        }
+
+        function drawPedestrian3D(ped) {
+            const proj = project3D(ped.side * 1.12, ped.z);
+            if (proj.scale <= 0.05) return;
+            const s = proj.scale;
+            const jumpY = ped.jumpTimer > 0 ? Math.abs(Math.sin(performance.now() * 0.025)) * -18 * s : 0;
+
+            ctx.save();
+            ctx.translate(proj.screenX, proj.screenY + jumpY);
+
+            if (ped.role === 'achchi') {
+                ctx.fillStyle = '#be123c';
+                ctx.fillRect(-9 * s, -26 * s, 18 * s, 26 * s);
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(-10 * s, -44 * s, 20 * s, 19 * s);
+                ctx.fillStyle = '#d6d3d1';
+                ctx.beginPath(); ctx.arc(0, -52 * s, 8 * s, 0, Math.PI * 2); ctx.fill();
+
+                ctx.save();
+                ctx.translate(9 * s, -38 * s);
+                const wave = ped.reacted ? Math.sin(performance.now() * 0.04) * 0.5 : 0;
+                ctx.rotate(ped.stickAngle + wave);
+                ctx.strokeStyle = '#78350f';
+                ctx.lineWidth = Math.max(1.5, 3.5 * s);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(18 * s, -26 * s);
+                ctx.stroke();
+                ctx.restore();
+            } else {
+                [-10 * s, 10 * s].forEach((kx, idx) => {
+                    ctx.fillStyle = idx === 0 ? '#f8fafc' : '#38bdf8';
+                    ctx.fillRect(kx - 7 * s, -40 * s, 14 * s, 40 * s);
+                    ctx.fillStyle = '#fde047';
+                    ctx.beginPath(); ctx.arc(kx, -48 * s, 7 * s, 0, Math.PI * 2); ctx.fill();
+                });
+            }
+
+            ctx.restore();
+        }
+
+        function drawSpeechBubbles() {
+            state.speechBubbles.forEach(sb => {
+                ctx.save();
+                ctx.font = 'bold 11px "Noto Sans Sinhala", Inter, sans-serif';
+                const textW = Math.min(cw - 24, ctx.measureText(sb.text).width + 22);
+                const bx = Math.max(textW / 2 + 8, Math.min(cw - textW / 2 - 8, sb.x));
+                const by = sb.y;
+
+                ctx.fillStyle = 'rgba(9, 13, 22, 0.94)';
+                ctx.strokeStyle = sb.borderColor;
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.roundRect(bx - textW / 2, by - 14, textW, 25, 12);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.fillText(sb.text, bx, by + 2.5);
+                ctx.restore();
+            });
+        }
+
+        function renderFrame() {
+            ctx.save();
+            if (state.cameraShake > 0) {
+                ctx.translate(
+                    (Math.random() - 0.5) * state.cameraShake,
+                    (Math.random() - 0.5) * state.cameraShake
+                );
+            }
+
+            ctx.clearRect(0, 0, cw, ch);
+
+            draw3DSkyAndHorizonRoad();
+
+            const renderQueue = [];
+
+            state.scenery.forEach(sc => renderQueue.push({ z: sc.z, draw: () => drawScenery3D(sc) }));
+            state.pedestrians.forEach(ped => renderQueue.push({ z: ped.z, draw: () => drawPedestrian3D(ped) }));
+            state.civilians.forEach(civ => renderQueue.push({ z: civ.z, draw: () => drawCivilian3D(civ) }));
+            state.policeUnits.forEach(pol => renderQueue.push({ z: pol.z, draw: () => drawPolice3D(pol) }));
+
+            renderQueue.push({
+                z: state.rivalCtb.z,
+                draw: () => {
+                    const ctbProj = project3D(state.rivalCtb.x, state.rivalCtb.z);
+                    if (ctbProj.scale > 0.06) {
+                        drawAshokLeylandRear3D(
+                            ctbProj.screenX,
+                            ctbProj.screenY,
+                            ctbProj.scale,
+                            (cw * 0.5 - ctbProj.screenX) / (cw * 0.4),
+                            0,
+                            BUS_PROFILES[0],
+                            true,
+                            {}
+                        );
+                    }
+                }
+            });
+
+            renderQueue.push({
+                z: 0,
+                draw: () => {
+                    const p = state.player;
+                    const pProj = project3D(p.x, 0);
+                    const skewX = ((cw * 0.5 - pProj.screenX) / (cw * 0.35)) - p.tilt * 2.2;
+                    drawAshokLeylandRear3D(
+                        pProj.screenX,
+                        pProj.screenY,
+                        1.08,
+                        skewX,
+                        p.tilt,
+                        BUS_PROFILES[selectedBusIndex],
+                        false,
+                        {
+                            partyLightsOn: p.partyLightsOn,
+                            passLightActive: p.passLightTimer > 0,
+                            spoilerAttached: p.spoilerAttached
+                        }
+                    );
+                }
+            });
+
+            renderQueue.sort((a, b) => b.z - a.z);
+            renderQueue.forEach(item => item.draw());
+
+            state.exhaustSmoke.forEach(sm => {
+                ctx.fillStyle = `rgba(${sm.color}, ${Math.max(0, sm.alpha)})`;
+                ctx.beginPath();
+                ctx.arc(sm.x, sm.y, sm.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            state.particles.forEach(pt => {
+                ctx.fillStyle = pt.color;
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            drawSpeechBubbles();
+
+            ctx.restore();
+        }
+
+        let lastTime = performance.now();
+        function gameLoop(now) {
+            const dt = Math.min(0.05, (now - lastTime) / 1000);
+            lastTime = now;
+            if (gameRunning) updateGame(dt);
+            renderFrame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.onload = function () {
+            resizeCanvas();
+            resetGameSession();
+
+            const bar = document.getElementById('loadingBarFill');
+            setTimeout(() => { bar.style.width = '50%'; }, 150);
+            setTimeout(() => { bar.style.width = '100%'; }, 650);
+            setTimeout(() => {
+                const loader = document.getElementById('loadingOverlay');
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.classList.add('hidden');
+                    openGarageModal();
+                }, 500);
+            }, 950);
+
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>
